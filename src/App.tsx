@@ -1,53 +1,147 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
-type Area = "vendas" | "marketing" | "gestao" | "financeiro";
-type Timing = "imediato" | "30_dias" | "sem_pressa";
+type Area = "vendas" | "marketing" | "gestao" | "financeiro" | "outros";
+type Screen = "landing" | "explore" | "quiz" | "loading" | "result" | "consultor";
+type ConsultantSection = "dashboard" | "leads" | "agenda" | "perfil";
 
 type Specialist = {
   id: string;
   name: string;
   title: string;
   focus: string;
-  experience: string;
-  city: string;
   description: string;
   bullets: string[];
   whatsapp: string;
 };
 
+type ExploreItem = {
+  id: string;
+  name: string;
+  kind: "Consultor" | "SaaS" | "Parceiro";
+  category: string;
+  focus: string;
+  audience: string;
+  description: string;
+  badge?: string;
+};
+
+type NumberItem = {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  label: string;
+};
+
+type SignalItem = {
+  title: string;
+  description: string;
+  icon: string;
+  accent: string;
+  time: string;
+};
+
+type ContactTarget = {
+  name: string;
+  title: string;
+  whatsapp: string;
+};
+
+type ConsultantLead = {
+  id: string;
+  company: string;
+  contact: string;
+  role: string;
+  status: "Novo" | "Em contato" | "Qualificado" | "Reunião marcada";
+  diagnosis: string;
+  objective: string;
+  urgency: string;
+  updatedAt: string;
+};
+
+type ConsultantAgendaItem = {
+  id: string;
+  title: string;
+  company: string;
+  startsAt: string;
+  owner: string;
+  status: "Confirmada" | "Pendente";
+};
+
+type RevenueProfile =
+  | "inconsistente"
+  | "ate_30k"
+  | "30k_100k"
+  | "100k_300k"
+  | "300k_1m"
+  | "acima_1m";
+
+type BusinessMoment =
+  | "comecando"
+  | "validado_desorganizado"
+  | "patinando"
+  | "crescendo_sem_prioridade"
+  | "estruturada_subperformando"
+  | "escalando_com_seguranca";
+
+type DecisionMaking =
+  | "urgencia"
+  | "tentativa_erro"
+  | "alguma_estrategia"
+  | "organizacao_sem_clareza"
+  | "dados_sem_direcao_externa"
+  | "processo_refinando";
+
+type CurrentBottleneck =
+  | "varios_sem_ordem"
+  | "falhas_sem_identificar"
+  | "problema_sem_solucao"
+  | "solucoes_sem_resultado"
+  | "clareza_parcial_execucao"
+  | "clareza_busca_eficiencia";
+
+type SolutionExperience =
+  | "interno"
+  | "sem_criterio"
+  | "sem_consistencia"
+  | "sem_adequacao"
+  | "boas_sem_continuidade"
+  | "estrategicas_evoluir";
+
+type PrimaryGoal =
+  | "sair_caos"
+  | "controle_operacao"
+  | "aumentar_previsibilidade"
+  | "corrigir_gargalos"
+  | "escalar_sustentavel"
+  | "otimizar_existente";
+
 type FormData = {
   challenge: string;
-  segment: string;
-  revenue: string;
-  employees: string;
-  area: Area;
-  hasProcess: string;
-  dependsOnReferral: string;
-  hasPositioning: string;
-  tracksChannel: string;
-  hasRituals: string;
-  hasCashControl: string;
-  timing: Timing;
+  revenueProfile: RevenueProfile | "";
+  businessMoment: BusinessMoment | "";
+  decisionMaking: DecisionMaking | "";
+  currentBottleneck: CurrentBottleneck | "";
+  solutionExperience: SolutionExperience | "";
+  primaryGoal: PrimaryGoal | "";
   name: string;
   email: string;
   phone: string;
-  company: string;
+  role: string;
+  mainPain: string;
 };
 
 const specialists: Record<Area, Specialist> = {
   vendas: {
     id: "consultor_vendas_1",
     name: "Marcos Tavares",
-    title: "Especialista em Operacao Comercial",
+    title: "Especialista em Operação Comercial",
     focus: "Estrutura times comerciais para previsibilidade de receita.",
-    experience: "12 anos em B2B e servicos",
-    city: "Atuacao nacional",
     description:
       "Organiza funil, metas e processo para empresas que vendem no improviso e dependem demais do fundador.",
     bullets: [
-      "Implementacao de funil e playbook",
-      "Ritmo de gestao comercial semanal",
-      "Treinamento de prospeccao e follow-up",
+      "Implementação de funil e playbook",
+      "Ritmo de gestão comercial semanal",
+      "Treinamento de prospecção e follow-up",
     ],
     whatsapp: "https://wa.me/5585000000101",
   },
@@ -55,188 +149,908 @@ const specialists: Record<Area, Specialist> = {
     id: "consultor_marketing_1",
     name: "Camila Ferraz",
     title: "Estrategista de Marketing e Growth",
-    focus: "Transforma marketing disperso em aquisicao consistente.",
-    experience: "9 anos em growth e posicionamento",
-    city: "Remoto para todo o Brasil",
+    focus: "Transforma marketing disperso em aquisição consistente.",
     description:
-      "Ajuda negocios a definir promessa, canais prioritarios e rotina de geracao de demanda com mensuracao.",
+      "Ajuda negócios a definir promessa, canais prioritários e rotina de geração de demanda com mensuração.",
     bullets: [
       "Posicionamento e oferta principal",
-      "Plano de conteudo e campanhas",
-      "Leitura de CAC, CPL e conversao",
+      "Plano de conteúdo e campanhas",
+      "Leitura de CAC, CPL e conversão",
     ],
     whatsapp: "https://wa.me/5585000000102",
   },
   gestao: {
     id: "consultor_gestao_1",
     name: "Renata Mota",
-    title: "Consultora em Gestao Empresarial",
+    title: "Consultora em Gestão Empresarial",
     focus: "Cria clareza operacional e prioridade para escalar sem caos.",
-    experience: "14 anos em operacoes e PMO",
-    city: "Atendimento hibrido",
     description:
-      "Estrutura rituais, indicadores e responsabilidades para empresas com operacao desorganizada e baixa execucao.",
+      "Estrutura rituais, indicadores e responsabilidades para empresas com operação desorganizada e baixa execução.",
     bullets: [
-      "Rituais de gestao e acompanhamento",
-      "Indicadores de operacao e dono por area",
-      "Plano de acao para gargalos recorrentes",
+      "Rituais de gestão e acompanhamento",
+      "Indicadores de operação e dono por área",
+      "Plano de ação para gargalos recorrentes",
     ],
     whatsapp: "https://wa.me/5585000000103",
   },
   financeiro: {
     id: "consultor_financeiro_1",
     name: "Eduardo Nery",
-    title: "Especialista em Financas para PMEs",
-    focus: "Dá visibilidade de caixa e margem para decisoes seguras.",
-    experience: "11 anos em FP&A e reestruturacao financeira",
-    city: "Atuacao nacional",
+    title: "Especialista em Finanças para PMEs",
+    focus: "Dá visibilidade de caixa e margem para decisões seguras.",
     description:
-      "Resolve empresas sem previsao de caixa, precificacao confusa e baixa disciplina financeira.",
+      "Resolve empresas sem previsão de caixa, precificação confusa e baixa disciplina financeira.",
     bullets: [
-      "Controle de caixa e projecao",
-      "Analise de margem e precificacao",
+      "Controle de caixa e projeção",
+      "Análise de margem e precificação",
       "Rotina financeira com indicadores-chave",
     ],
     whatsapp: "https://wa.me/5585000000104",
+  },
+  outros: {
+    id: "time_diagnostico_rsn",
+    name: "Time de Diagnóstico RSN",
+    title: "Especialistas em Triagem e Direcionamento",
+    focus: "Ajuda a traduzir problemas difusos em uma frente de ação clara.",
+    description:
+      "Ideal para empresas que sentem o problema, mas ainda não conseguem nomear exatamente em qual frente ele está.",
+    bullets: [
+      "Leitura inicial do gargalo principal",
+      "Direcionamento para especialista mais aderente",
+      "Priorização do primeiro passo de execução",
+    ],
+    whatsapp: "https://wa.me/5585000000105",
   },
 };
 
 const initialData: FormData = {
   challenge: "",
-  segment: "",
-  revenue: "",
-  employees: "",
-  area: "vendas",
-  hasProcess: "",
-  dependsOnReferral: "",
-  hasPositioning: "",
-  tracksChannel: "",
-  hasRituals: "",
-  hasCashControl: "",
-  timing: "imediato",
+  revenueProfile: "",
+  businessMoment: "",
+  decisionMaking: "",
+  currentBottleneck: "",
+  solutionExperience: "",
+  primaryGoal: "",
   name: "",
   email: "",
   phone: "",
-  company: "",
+  role: "",
+  mainPain: "",
 };
 
-const refinementContent: Record<
-  Area,
+const revenueProfileOptions: Array<{ value: RevenueProfile; label: string }> = [
   {
-    title: string;
-    fields: {
-      key: keyof FormData;
-      label: string;
-    }[];
-  }
-> = {
-  vendas: {
-    title: "Entender a operacao comercial",
-    fields: [
-      { key: "hasProcess", label: "Voce tem processo comercial estruturado?" },
-      { key: "dependsOnReferral", label: "Hoje voce depende de indicacao para vender?" },
-    ],
+    value: "inconsistente",
+    label: "Ainda estamos estruturando e faturamos de forma inconsistente, sem previsibilidade clara",
   },
-  marketing: {
-    title: "Entender sua aquisicao",
-    fields: [
-      { key: "hasPositioning", label: "Sua empresa tem posicionamento e oferta principal bem definidos?" },
-      { key: "tracksChannel", label: "Voce acompanha resultado por canal de marketing?" },
-    ],
+  {
+    value: "ate_30k",
+    label: "Faturamos até R$30 mil/mês, mas com muita instabilidade e dificuldade de crescimento",
   },
-  gestao: {
-    title: "Entender sua rotina de lideranca",
-    fields: [
-      { key: "hasRituals", label: "Existem rituais de acompanhamento com o time?" },
-      { key: "hasProcess", label: "As responsabilidades estao documentadas em processos?" },
-    ],
+  {
+    value: "30k_100k",
+    label: "Entre R$30 mil e R$100 mil/mês, com operação ativa, mas ainda desorganizada",
   },
-  financeiro: {
-    title: "Entender sua previsibilidade financeira",
-    fields: [
-      { key: "hasCashControl", label: "Voce tem fluxo de caixa atualizado semanalmente?" },
-      { key: "hasProcess", label: "Sua precificacao segue um metodo claro?" },
-    ],
+  {
+    value: "100k_300k",
+    label: "Entre R$100 mil e R$300 mil/mês, com crescimento, mas enfrentando gargalos operacionais",
   },
-};
+  {
+    value: "300k_1m",
+    label: "Entre R$300 mil e R$1 milhão/mês, com estrutura montada, mas buscando escala",
+  },
+  {
+    value: "acima_1m",
+    label: "Acima de R$1 milhão/mês, com operação sólida e foco em otimização e crescimento estratégico",
+  },
+];
 
-const quickChallenges = ["Aumentar vendas", "Melhorar marketing", "Organizar gestão"];
+const businessMomentOptions: Array<{ value: BusinessMoment; label: string }> = [
+  {
+    value: "comecando",
+    label: "Estamos começando e ainda tentando entender como estruturar o negócio da forma correta",
+  },
+  {
+    value: "validado_desorganizado",
+    label: "Já validamos o negócio, mas enfrentamos dificuldades para organizar e crescer de forma consistente",
+  },
+  {
+    value: "patinando",
+    label: "A empresa funciona, mas sentimos que estamos patinando e não conseguimos avançar como gostaríamos",
+  },
+  {
+    value: "crescendo_sem_prioridade",
+    label: "Estamos crescendo, mas com vários problemas surgindo ao mesmo tempo e sem clareza de prioridade",
+  },
+  {
+    value: "estruturada_subperformando",
+    label: "Temos uma operação estruturada, mas sabemos que poderíamos performar muito mais",
+  },
+  {
+    value: "escalando_com_seguranca",
+    label: "Estamos em fase de crescimento e buscamos otimizar decisões para escalar com segurança",
+  },
+];
+
+const decisionMakingOptions: Array<{ value: DecisionMaking; label: string }> = [
+  {
+    value: "urgencia",
+    label: "As decisões são tomadas no dia a dia, mais por urgência do que por planejamento",
+  },
+  {
+    value: "tentativa_erro",
+    label: "Decidimos com base em tentativa e erro, testando várias coisas sem muita direção clara",
+  },
+  {
+    value: "alguma_estrategia",
+    label: "Algumas decisões são estratégicas, mas ainda existe muita incerteza no processo",
+  },
+  {
+    value: "organizacao_sem_clareza",
+    label: "Já temos certa organização, mas nem sempre temos clareza total sobre o melhor caminho",
+  },
+  {
+    value: "dados_sem_direcao_externa",
+    label: "As decisões são baseadas em dados e planejamento, mas ainda sentimos falta de direcionamento externo",
+  },
+  {
+    value: "processo_refinando",
+    label: "Temos um processo estruturado de decisão, mas buscamos refinar e melhorar constantemente",
+  },
+];
+
+const currentBottleneckOptions: Array<{ value: CurrentBottleneck; label: string }> = [
+  {
+    value: "varios_sem_ordem",
+    label: "Temos vários problemas ao mesmo tempo e dificuldade para entender por onde começar",
+  },
+  {
+    value: "falhas_sem_identificar",
+    label: "Sabemos que existem falhas, mas não conseguimos identificar exatamente o que está travando o crescimento",
+  },
+  {
+    value: "problema_sem_solucao",
+    label: "Já identificamos alguns problemas, mas não sabemos qual solução é a mais adequada",
+  },
+  {
+    value: "solucoes_sem_resultado",
+    label: "Tentamos resolver, mas as soluções aplicadas não trazem o resultado esperado",
+  },
+  {
+    value: "clareza_parcial_execucao",
+    label: "Temos clareza parcial dos problemas, mas falta execução ou parceiros certos",
+  },
+  {
+    value: "clareza_busca_eficiencia",
+    label: "Sabemos exatamente onde estão os gargalos e buscamos soluções mais eficientes para resolver",
+  },
+];
+
+const solutionExperienceOptions: Array<{ value: SolutionExperience; label: string }> = [
+  {
+    value: "interno",
+    label: "Ainda não buscamos ajuda externa e tentamos resolver tudo internamente",
+  },
+  {
+    value: "sem_criterio",
+    label: "Já buscamos algumas soluções, mas sem muito critério ou estratégia",
+  },
+  {
+    value: "sem_consistencia",
+    label: "Testamos diferentes serviços ou ferramentas, mas sem resultados consistentes",
+  },
+  {
+    value: "sem_adequacao",
+    label: "Já investimos em soluções, mas sentimos que não eram adequadas para o nosso momento",
+  },
+  {
+    value: "boas_sem_continuidade",
+    label: "Tivemos boas experiências, mas ainda não encontramos um modelo contínuo de evolução",
+  },
+  {
+    value: "estrategicas_evoluir",
+    label: "Já utilizamos soluções estratégicas e buscamos evoluir ainda mais o negócio",
+  },
+];
+
+const primaryGoalOptions: Array<{ value: PrimaryGoal; label: string }> = [
+  {
+    value: "sair_caos",
+    label: "Organizar o negócio e sair do caos operacional atual",
+  },
+  {
+    value: "controle_operacao",
+    label: "Estruturar melhor processos e ter mais controle da operação",
+  },
+  {
+    value: "aumentar_previsibilidade",
+    label: "Aumentar faturamento com mais previsibilidade",
+  },
+  {
+    value: "corrigir_gargalos",
+    label: "Corrigir gargalos que estão travando o crescimento",
+  },
+  {
+    value: "escalar_sustentavel",
+    label: "Escalar o negócio de forma estruturada e sustentável",
+  },
+  {
+    value: "otimizar_existente",
+    label: "Otimizar uma operação já existente para crescer com mais eficiência",
+  },
+];
+
+const quickChallenges = [
+  "Vender mais",
+  "Atrair clientes melhores",
+  "Colocar a gestão em ordem",
+  "Parar de apagar incêndio",
+  "Ganhar previsibilidade financeira",
+];
+
+const ecosystemLogos = ["Vendas", "Marketing", "Gestão", "Finanças", "Operações", "Pessoas", "Comercial", "Crescimento"];
+
+const numbers: NumberItem[] = [
+  {
+    value: 300,
+    prefix: "+",
+    label: "diagnósticos iniciados",
+  },
+  {
+    value: 80,
+    prefix: "+",
+    label: "parceiros validados",
+  },
+  {
+    value: 200,
+    prefix: "+",
+    label: "soluções entre sistemas e parceiros",
+  },
+  {
+    value: 1,
+    label: "direção clara para agir",
+  },
+];
+
+const diagnosisSignals: SignalItem[] = [
+  {
+    title: "Baixa conversão comercial",
+    description: "Demanda existe, mas falta processo para virar receita.",
+    icon: "V",
+    accent: "#ff7a1a",
+    time: "agora",
+  },
+  {
+    title: "Marketing sem previsibilidade",
+    description: "Canal ativo, mas pouca clareza sobre o que traz demanda.",
+    icon: "M",
+    accent: "#ff9856",
+    time: "2 min",
+  },
+  {
+    title: "Operação apagando incêndio",
+    description: "Time cheio e mesmo assim sem ritmo claro de execução.",
+    icon: "O",
+    accent: "#ffb273",
+    time: "4 min",
+  },
+  {
+    title: "Caixa sem visibilidade",
+    description: "Faturamento entra, mas margem e caixa seguem no escuro.",
+    icon: "F",
+    accent: "#ff8a34",
+    time: "6 min",
+  },
+];
+
+const successSignals: SignalItem[] = [
+  {
+    title: "Agora eu sei onde atacar primeiro",
+    description: "Saímos da sensação de caos e passamos a ter uma prioridade clara de execução.",
+    icon: "✓",
+    accent: "#ffb273",
+    time: "depois",
+  },
+  {
+    title: "Saímos do improviso comercial",
+    description: "As oportunidades começaram a seguir processo, rotina e previsibilidade de verdade.",
+    icon: "✓",
+    accent: "#ff9856",
+    time: "depois",
+  },
+  {
+    title: "Hoje temos clareza de caixa",
+    description: "Faturamento, margem e decisão financeira deixaram de andar no escuro.",
+    icon: "✓",
+    accent: "#ff8a34",
+    time: "depois",
+  },
+  {
+    title: "A operação finalmente ganhou cadência",
+    description: "O time passou a trabalhar com mais ritmo, dono definido e menos retrabalho.",
+    icon: "✓",
+    accent: "#ff7a1a",
+    time: "depois",
+  },
+];
+
+function findOptionLabel<T extends string>(options: Array<{ value: T; label: string }>, value: T | "") {
+  return options.find((option) => option.value === value)?.label ?? "";
+}
+
+function AnimatedSignalList({ items }: { items: SignalItem[] }) {
+  const loopItems = [...items, ...items];
+  const tone = items === successSignals ? "success" : "problem";
+
+  return (
+    <div className={`animated-signal-shell ${tone}`}>
+      <div className="animated-signal-track">
+        {loopItems.map((item, index) => (
+          <article className="signal-card" key={`${item.title}-${index}`}>
+            <div className="signal-icon" style={{ backgroundColor: item.accent }}>
+              <span>{item.icon}</span>
+            </div>
+            <div className="signal-copy">
+              <div className="signal-heading">
+                <h3>{item.title}</h3>
+                <span>{item.time}</span>
+              </div>
+              <p>{item.description}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="signal-fade signal-fade-top" />
+      <div className="signal-fade signal-fade-bottom" />
+    </div>
+  );
+}
+
+function AnimatedNumber({
+  value,
+  prefix = "",
+  suffix = "",
+}: {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+}) {
+  const [display, setDisplay] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const elementRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    const node = elementRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasStarted(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.45 },
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasStarted) {
+      return;
+    }
+
+    let frame = 0;
+    let startTime = 0;
+    const duration = 1400;
+
+    const tick = (timestamp: number) => {
+      if (!startTime) {
+        startTime = timestamp;
+      }
+
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(value * eased));
+
+      if (progress < 1) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frame = window.requestAnimationFrame(tick);
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [hasStarted, value]);
+
+  return (
+    <span className="animated-number" ref={elementRef}>
+      {prefix}
+      {display.toLocaleString("pt-BR")}
+      {suffix}
+    </span>
+  );
+}
+
+function formatCategoryLabel(label: string) {
+  const categoryMap: Record<string, string> = {
+    "Gestao & Estrategia": "Gestão & Estratégia",
+    Financas: "Finanças",
+    Operacoes: "Operações",
+    Tecnologia: "Tecnologia",
+    Vendas: "Vendas",
+    "Marketing & Growth": "Marketing & Growth",
+    "Pessoas & Cultura": "Pessoas & Cultura",
+    Todos: "Todos",
+  };
+
+  return categoryMap[label] ?? label;
+}
+
+function toStatusClassName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+}
+
+const featuredPartners = [
+  {
+    name: "Marcos Tavares",
+    category: "Vendas e processo comercial",
+    benefit: "Estrutura previsibilidade comercial.",
+  },
+  {
+    name: "Camila Ferraz",
+    category: "Marketing e growth",
+    benefit: "Organiza oferta, canais e demanda.",
+  },
+  {
+    name: "Renata Mota",
+    category: "Gestão e operação",
+    benefit: "Traz ordem para a operação.",
+  },
+  {
+    name: "Eduardo Nery",
+    category: "Finanças empresariais",
+    benefit: "Dá clareza sobre caixa e margem.",
+  },
+];
+
+const categories = [
+  {
+    title: "Gestão e Estratégia",
+    exploreCategory: "Gestao & Estrategia",
+    description: "Para negócios sem prioridade, dono sobrecarregado e pouca clareza.",
+    accent: false,
+    signal: "Rituais, indicadores e execução",
+  },
+  {
+    title: "Marketing e Growth",
+    exploreCategory: "Marketing & Growth",
+    description: "Para empresas que precisam gerar demanda com mais critério.",
+    accent: false,
+    signal: "Oferta, canal e demanda",
+  },
+  {
+    title: "Vendas",
+    exploreCategory: "Vendas",
+    description: "Para operações que precisam vender melhor, com processo e ritmo.",
+    accent: false,
+    signal: "Pipeline, rotina e conversão",
+  },
+  {
+    title: "Finanças",
+    exploreCategory: "Financas",
+    description: "Para decidir com base em caixa, margem e previsibilidade.",
+    accent: false,
+    signal: "Caixa, margem e previsão",
+  },
+  {
+    title: "Operações",
+    exploreCategory: "Operacoes",
+    description: "Para quem vive apagando incêndio e quer crescer com ordem.",
+    accent: false,
+    signal: "Processo, dono e cadência",
+  },
+  {
+    title: "Pessoas e Cultura",
+    exploreCategory: "Pessoas & Cultura",
+    description: "Para alinhar time, responsabilidade e performance.",
+    accent: true,
+    signal: "Papéis, liderança e cultura",
+  },
+];
+
+const howItWorks = [
+  {
+    title: "Descreva sua dor",
+    description: "Conte o que mais trava seu negócio hoje.",
+  },
+  {
+    title: "Responda ao diagnóstico",
+    description: "Refinamos contexto, momento e prioridade.",
+  },
+  {
+    title: "Receba a melhor direção",
+    description: "Você recebe a solução mais aderente.",
+  },
+];
+
+const exploreCategories = [
+  "Todos",
+  "Vendas",
+  "Marketing & Growth",
+  "Gestao & Estrategia",
+  "Financas",
+  "Operacoes",
+  "Pessoas & Cultura",
+  "Tecnologia",
+];
+
+const exploreItems: ExploreItem[] = [
+  {
+    id: "exp-1",
+    name: "Marcos Tavares",
+    kind: "Consultor",
+    category: "Vendas",
+    focus: "Processo comercial e previsibilidade",
+    audience: "Empresas B2B e serviços consultivos",
+    description:
+      "Estrutura rotina comercial, playbook e gestão de pipeline para times que vendem no improviso.",
+    badge: "Mais procurado",
+  },
+  {
+    id: "exp-2",
+    name: "Camila Ferraz",
+    kind: "Consultor",
+    category: "Marketing & Growth",
+    focus: "Posicionamento, demanda e canais",
+    audience: "Negócios que precisam gerar demanda melhor",
+    description:
+      "Organiza oferta, narrativa, canais e plano de aquisição para empresas com marketing disperso.",
+    badge: "Growth",
+  },
+  {
+    id: "exp-3",
+    name: "Renata Mota",
+    kind: "Consultor",
+    category: "Gestao & Estrategia",
+    focus: "Operação, rituais e execução",
+    audience: "Empresas em fase de organização interna",
+    description:
+      "Ajuda a reduzir caos operacional e dependência do dono com rotinas, indicadores e accountability.",
+  },
+  {
+    id: "exp-4",
+    name: "Eduardo Nery",
+    kind: "Consultor",
+    category: "Financas",
+    focus: "Caixa, margem e previsibilidade",
+    audience: "PMEs com dificuldade de leitura financeira",
+    description:
+      "Implanta clareza financeira para empresas que crescem sem saber o que realmente sobra.",
+  },
+  {
+    id: "exp-5",
+    name: "Orbit CRM",
+    kind: "SaaS",
+    category: "Vendas",
+    focus: "CRM e acompanhamento comercial",
+    audience: "Times comerciais pequenos e médios",
+    description:
+      "Centraliza oportunidades, tarefas e previsões para dar ritmo e visibilidade ao time de vendas.",
+    badge: "SaaS",
+  },
+  {
+    id: "exp-6",
+    name: "Pulse Growth",
+    kind: "SaaS",
+    category: "Marketing & Growth",
+    focus: "Campanhas, leads e atribuição",
+    audience: "Empresas que precisam organizar marketing",
+    description:
+      "Ajuda a consolidar campanhas, canal e conversão em um painel simples para decisão.",
+  },
+  {
+    id: "exp-7",
+    name: "Base Operacional",
+    kind: "Parceiro",
+    category: "Operacoes",
+    focus: "Mapeamento de processos e indicadores",
+    audience: "Empresas com operação desorganizada",
+    description:
+      "Consultoria para padronizar processos, definir donos e criar rotina de acompanhamento.",
+    badge: "Parceiro",
+  },
+  {
+    id: "exp-8",
+    name: "PeopleCore",
+    kind: "Parceiro",
+    category: "Pessoas & Cultura",
+    focus: "Estrutura de time e cultura de performance",
+    audience: "Empresas em crescimento e lideranças médias",
+    description:
+      "Cria base de cargos, alinhamento de papéis e desenvolvimento de liderança para reduzir ruído interno.",
+  },
+  {
+    id: "exp-9",
+    name: "Stack Finance",
+    kind: "SaaS",
+    category: "Financas",
+    focus: "Fluxo de caixa e dashboards",
+    audience: "PMEs que precisam decidir melhor",
+    description:
+      "Ferramenta de previsão financeira para acompanhar caixa, despesas e margem em tempo real.",
+  },
+  {
+    id: "exp-10",
+    name: "Node TI Advisory",
+    kind: "Parceiro",
+    category: "Tecnologia",
+    focus: "Estrutura tech e automação",
+    audience: "Empresas com gargalos de processo e sistema",
+    description:
+      "Diagnostica gargalos de tecnologia e desenha automações simples para ganhar eficiência.",
+  },
+];
+
+const consultantLeads: ConsultantLead[] = [
+  {
+    id: "lead-001",
+    company: "Clínica Horizonte",
+    contact: "Fernanda Melo",
+    role: "Diretora de operações",
+    status: "Novo",
+    diagnosis: "Falta de previsibilidade comercial",
+    objective: "Aumentar faturamento com mais previsibilidade",
+    urgency: "Alta",
+    updatedAt: "Hoje, 09:12",
+  },
+  {
+    id: "lead-002",
+    company: "Ativa Engenharia",
+    contact: "Rafael Lima",
+    role: "Sócio",
+    status: "Em contato",
+    diagnosis: "Gargalos operacionais travando a escala",
+    objective: "Escalar o negócio de forma estruturada e sustentável",
+    urgency: "Média",
+    updatedAt: "Hoje, 10:41",
+  },
+  {
+    id: "lead-003",
+    company: "Verde Varejo",
+    contact: "Patrícia Gomes",
+    role: "CEO",
+    status: "Qualificado",
+    diagnosis: "Falta de clareza financeira para crescer com segurança",
+    objective: "Estruturar melhor processos e ter mais controle da operação",
+    urgency: "Alta",
+    updatedAt: "Ontem, 17:28",
+  },
+  {
+    id: "lead-004",
+    company: "Conecta Hub",
+    contact: "Diego Rocha",
+    role: "Head Comercial",
+    status: "Reunião marcada",
+    diagnosis: "Aquisição sem previsibilidade",
+    objective: "Corrigir gargalos que estão travando o crescimento",
+    urgency: "Média",
+    updatedAt: "Ontem, 15:03",
+  },
+];
+
+const consultantAgenda: ConsultantAgendaItem[] = [
+  {
+    id: "meeting-1",
+    title: "Diagnóstico comercial",
+    company: "Conecta Hub",
+    startsAt: "Hoje · 16:00",
+    owner: "SDR Mariana",
+    status: "Confirmada",
+  },
+  {
+    id: "meeting-2",
+    title: "Triagem financeira",
+    company: "Verde Varejo",
+    startsAt: "Amanhã · 09:30",
+    owner: "Eduardo Nery",
+    status: "Pendente",
+  },
+  {
+    id: "meeting-3",
+    title: "Call de qualificação",
+    company: "Ativa Engenharia",
+    startsAt: "Amanhã · 14:00",
+    owner: "SDR Mariana",
+    status: "Confirmada",
+  },
+];
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [screen, setScreen] = useState<"landing" | "quiz" | "result">("landing");
+  const [screen, setScreen] = useState<Screen>("landing");
   const [formData, setFormData] = useState<FormData>(initialData);
+  const [activeExploreCategory, setActiveExploreCategory] = useState("Todos");
+  const [exploreQuery, setExploreQuery] = useState("");
+  const [isPersonalizedExplore, setIsPersonalizedExplore] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [contactTarget, setContactTarget] = useState<ContactTarget | null>(null);
+  const [hasUnlockedWhatsapp, setHasUnlockedWhatsapp] = useState(false);
+  const [consultantSection, setConsultantSection] = useState<ConsultantSection>("dashboard");
+  const [consultantAuthenticated, setConsultantAuthenticated] = useState(false);
+  const [consultantForm, setConsultantForm] = useState({
+    email: "",
+    password: "",
+    instance: "",
+  });
 
-  const specialist = specialists[formData.area];
+  const normalizedChallenge = formData.challenge.toLowerCase();
+
+  const inferredArea = useMemo<Area>(() => {
+    if (
+      normalizedChallenge.includes("caixa") ||
+      normalizedChallenge.includes("finance") ||
+      normalizedChallenge.includes("margem") ||
+      normalizedChallenge.includes("precifica")
+    ) {
+      return "financeiro";
+    }
+
+    if (
+      normalizedChallenge.includes("marketing") ||
+      normalizedChallenge.includes("lead") ||
+      normalizedChallenge.includes("demanda") ||
+      normalizedChallenge.includes("tráfego") ||
+      normalizedChallenge.includes("trafego") ||
+      normalizedChallenge.includes("posicionamento")
+    ) {
+      return "marketing";
+    }
+
+    if (
+      normalizedChallenge.includes("venda") ||
+      normalizedChallenge.includes("comercial") ||
+      normalizedChallenge.includes("cliente") ||
+      normalizedChallenge.includes("pipeline") ||
+      formData.primaryGoal === "aumentar_previsibilidade"
+    ) {
+      return "vendas";
+    }
+
+    if (
+      formData.primaryGoal === "sair_caos" ||
+      formData.primaryGoal === "controle_operacao" ||
+      formData.primaryGoal === "escalar_sustentavel" ||
+      formData.currentBottleneck === "varios_sem_ordem" ||
+      formData.currentBottleneck === "falhas_sem_identificar"
+    ) {
+      return "gestao";
+    }
+
+    if (
+      formData.primaryGoal === "otimizar_existente" &&
+      (formData.revenueProfile === "300k_1m" || formData.revenueProfile === "acima_1m")
+    ) {
+      return "gestao";
+    }
+
+    return "outros";
+  }, [formData.currentBottleneck, formData.primaryGoal, formData.revenueProfile, normalizedChallenge]);
+
+  const specialist = specialists[inferredArea];
 
   const diagnosis = useMemo(() => {
-    if (formData.area === "vendas") {
-      if (formData.hasProcess === "nao" && formData.dependsOnReferral === "sim") {
-        return {
-          title: "Falta de processo comercial previsivel",
-          summary:
-            "Sua empresa vende de forma reativa, com pouca previsibilidade e dependencia excessiva de indicacoes.",
-        };
-      }
-
+    if (
+      formData.currentBottleneck === "varios_sem_ordem" ||
+      formData.currentBottleneck === "falhas_sem_identificar"
+    ) {
       return {
-        title: "Baixa consistencia no funil de vendas",
+        title: "Falta de clareza sobre prioridade de crescimento",
         summary:
-          "Existe demanda comercial, mas falta rotina, acompanhamento e metodo para transformar oportunidades em receita recorrente.",
+          "Seu negócio já sente o peso de vários gargalos ao mesmo tempo, mas ainda sem uma leitura clara do que precisa ser atacado primeiro.",
       };
     }
 
-    if (formData.area === "marketing") {
-      if (formData.hasPositioning === "nao" && formData.tracksChannel === "nao") {
-        return {
-          title: "Marketing sem foco e sem mensuracao",
-          summary:
-            "Sua empresa provavelmente investe energia em canais demais sem clareza de oferta, prioridade e retorno.",
-        };
-      }
-
+    if (
+      inferredArea === "vendas" &&
+      (formData.primaryGoal === "aumentar_previsibilidade" ||
+        formData.currentBottleneck === "problema_sem_solucao" ||
+        formData.currentBottleneck === "solucoes_sem_resultado")
+    ) {
       return {
-        title: "Aquisicao sem escala",
+        title: "Falta de previsibilidade comercial",
         summary:
-          "Ha esforco de marketing, mas falta um sistema claro para escalar captacao e entender o que realmente funciona.",
+          "Hoje a empresa até gera movimento comercial, mas ainda sem processo consistente o suficiente para transformar esforço em receita previsível.",
       };
     }
 
-    if (formData.area === "gestao") {
-      if (formData.hasRituals === "nao" && formData.hasProcess === "nao") {
-        return {
-          title: "Operacao dependente do dono",
-          summary:
-            "As decisoes e cobrancas ainda estao muito concentradas, o que reduz velocidade e gera retrabalho.",
-        };
-      }
-
+    if (
+      inferredArea === "marketing" &&
+      (formData.currentBottleneck === "problema_sem_solucao" ||
+        formData.solutionExperience === "sem_consistencia" ||
+        formData.solutionExperience === "sem_criterio")
+    ) {
       return {
-        title: "Baixa cadencia de execucao",
+        title: "Aquisição sem previsibilidade",
         summary:
-          "O time ate trabalha, mas falta ritmo de acompanhamento, clareza de prioridades e responsabilizacao.",
+          "Existe tentativa de gerar demanda, mas ainda sem uma estrutura clara para saber o que realmente traz clientes e o que só consome energia.",
       };
     }
 
-    if (formData.hasCashControl === "nao" && formData.hasProcess === "nao") {
+    if (
+      inferredArea === "financeiro" ||
+      (formData.primaryGoal === "controle_operacao" &&
+        (normalizedChallenge.includes("caixa") || normalizedChallenge.includes("margem")))
+    ) {
       return {
-        title: "Financeiro sem controle de caixa e margem",
+        title: "Falta de clareza financeira para crescer com segurança",
         summary:
-          "O negocio corre risco de crescer sem saber exatamente quanto sobra, o que compromete caixa e decisoes.",
+          "A operação pode até estar rodando, mas decisões importantes ainda acontecem sem visibilidade suficiente de caixa, margem e impacto real no negócio.",
+      };
+    }
+
+    if (
+      formData.businessMoment === "crescendo_sem_prioridade" ||
+      formData.businessMoment === "escalando_com_seguranca" ||
+      formData.primaryGoal === "escalar_sustentavel" ||
+      formData.primaryGoal === "otimizar_existente"
+    ) {
+      return {
+        title: "Gargalos operacionais travando a escala",
+        summary:
+          "Sua empresa já passou da fase inicial, mas o crescimento está esbarrando em execução, priorização e estrutura para sustentar a próxima etapa.",
+      };
+    }
+
+    if (
+      formData.decisionMaking === "urgencia" ||
+      formData.decisionMaking === "tentativa_erro" ||
+      formData.solutionExperience === "interno"
+    ) {
+      return {
+        title: "Negócio sem direção operacional clara",
+        summary:
+          "As decisões ainda acontecem muito no impulso ou na tentativa e erro, o que dilui energia e atrasa a construção de um caminho mais consistente.",
       };
     }
 
     return {
-      title: "Gestao financeira sem previsao",
+      title: "Hora de alinhar estratégia, parceiro e execução",
       summary:
-        "Existe alguma disciplina financeira, mas falta consolidar indicadores e rotina para previsibilidade de caixa.",
+        "Seu cenário mostra maturidade suficiente para buscar soluções mais aderentes, com menos improviso e mais direção sobre o que realmente acelera o negócio.",
     };
-  }, [formData]);
+  }, [formData, inferredArea, normalizedChallenge]);
 
   const startDiagnosis = (challenge?: string) => {
-    setFormData((previous) => ({ ...previous, challenge: challenge ?? previous.challenge }));
+    setFormData((previous) => ({
+      ...previous,
+      challenge: challenge ?? previous.challenge,
+    }));
     setScreen("quiz");
     setCurrentStep(0);
+    setHasUnlockedWhatsapp(false);
+    window.localStorage.removeItem("rsn-last-whatsapp-url");
+  };
+
+  const goHome = () => {
+    setScreen("landing");
+    setIsPersonalizedExplore(false);
+    setExploreQuery("");
+    setActiveExploreCategory("Todos");
+  };
+
+  const openConsultantArea = () => {
+    setScreen("consultor");
   };
 
   const submitChallenge = (event: FormEvent<HTMLFormElement>) => {
@@ -249,12 +1063,16 @@ function App() {
   };
 
   const nextStep = () => {
-    if (currentStep < 4) {
+    if (!canContinue) {
+      return;
+    }
+
+    if (currentStep < 5) {
       setCurrentStep((step) => step + 1);
       return;
     }
 
-    setScreen("result");
+    setScreen("loading");
   };
 
   const previousStep = () => {
@@ -267,178 +1085,665 @@ function App() {
   };
 
   const stepTitle = [
-    "Contexto da empresa",
-    "Qual area mais trava o crescimento?",
-    refinementContent[formData.area].title,
-    "Qual a urgencia?",
-    "Para liberar sua recomendacao",
+    "Entender o faturamento atual",
+    "Ler o momento do negócio",
+    "Entender como vocês decidem",
+    "Mapear o gargalo predominante",
+    "Entender sua experiência com soluções",
+    "Definir o objetivo principal agora",
   ][currentStep];
+
+  const canContinue = [
+    Boolean(formData.revenueProfile),
+    Boolean(formData.businessMoment),
+    Boolean(formData.decisionMaking),
+    Boolean(formData.currentBottleneck),
+    Boolean(formData.solutionExperience),
+    Boolean(formData.primaryGoal),
+  ][currentStep];
+
+  const preferredExploreCategory =
+    inferredArea === "vendas"
+      ? "Vendas"
+      : inferredArea === "marketing"
+        ? "Marketing & Growth"
+        : inferredArea === "gestao"
+          ? "Gestao & Estrategia"
+          : inferredArea === "financeiro"
+            ? "Financas"
+            : "Todos";
+
+  const resultRecommendations = useMemo(() => {
+    const primaryCategory = preferredExploreCategory === "Todos" ? "Gestao & Estrategia" : preferredExploreCategory;
+    const exactSpecialistMatch = exploreItems.find((item) => item.name === specialist.name);
+
+    const primaryItem: ExploreItem =
+      exactSpecialistMatch ??
+      {
+        id: `diag-${specialist.id}`,
+        name: specialist.name,
+        kind: "Consultor",
+        category: primaryCategory,
+        focus: specialist.focus,
+        audience: "Empresas com cenário parecido com o seu diagnóstico",
+        description: specialist.description,
+        badge: "Recomendação principal",
+      };
+
+    const secondaryItems = exploreItems
+      .filter((item) => item.id !== primaryItem.id)
+      .filter((item) => item.category === primaryCategory || item.kind === "Parceiro")
+      .slice(0, 2);
+
+    return {
+      primary: primaryItem,
+      secondary: secondaryItems,
+    };
+  }, [preferredExploreCategory, specialist]);
+
+  const filteredExploreItems = useMemo(() => {
+    return exploreItems.filter((item) => {
+      const matchesCategory =
+        activeExploreCategory === "Todos" || item.category === activeExploreCategory;
+      const normalizedQuery = exploreQuery.trim().toLowerCase();
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        item.name.toLowerCase().includes(normalizedQuery) ||
+        item.category.toLowerCase().includes(normalizedQuery) ||
+        item.focus.toLowerCase().includes(normalizedQuery) ||
+        item.description.toLowerCase().includes(normalizedQuery);
+
+      return matchesCategory && matchesQuery;
+    });
+  }, [activeExploreCategory, exploreQuery]);
+
+  const openExploreCategory = (exploreCategory: string) => {
+    setIsPersonalizedExplore(false);
+    setExploreQuery("");
+    setActiveExploreCategory(exploreCategory);
+    setScreen("explore");
+  };
+
+  const recommendedExploreId = useMemo(() => {
+    const sameCategoryItem =
+      filteredExploreItems.find((item) => item.category === preferredExploreCategory) ?? filteredExploreItems[0];
+
+    return sameCategoryItem?.id;
+  }, [filteredExploreItems, preferredExploreCategory]);
+
+  useEffect(() => {
+    if (screen !== "loading") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setActiveExploreCategory(preferredExploreCategory);
+      setExploreQuery(formData.challenge);
+      setIsPersonalizedExplore(true);
+      setScreen("result");
+    }, 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [screen, preferredExploreCategory, formData.challenge]);
+
+  useEffect(() => {
+    if (!isContactModalOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isContactModalOpen]);
+
+  const openContactModal = (target: ContactTarget) => {
+    setContactTarget(target);
+    setIsContactModalOpen(true);
+  };
+
+  const closeContactModal = () => {
+    setIsContactModalOpen(false);
+  };
+
+  const submitContactRequest = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!contactTarget) {
+      return;
+    }
+
+    const message = [
+      `Olá, ${contactTarget.name}.`,
+      `Meu nome é ${formData.name || "não informado"}.`,
+      formData.email ? `Email: ${formData.email}.` : "",
+      formData.phone ? `Telefone: ${formData.phone}.` : "",
+      formData.role ? `Cargo: ${formData.role}.` : "",
+      formData.mainPain ? `Dor principal: ${formData.mainPain}.` : "",
+      formData.challenge ? `Desafio inicial: ${formData.challenge}.` : "",
+      `Diagnóstico principal: ${diagnosis.title}.`,
+      formData.primaryGoal ? `Objetivo principal: ${findOptionLabel(primaryGoalOptions, formData.primaryGoal)}.` : "",
+      formData.currentBottleneck
+        ? `Gargalo percebido: ${findOptionLabel(currentBottleneckOptions, formData.currentBottleneck)}.`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const url = `${contactTarget.whatsapp}?text=${encodeURIComponent(message)}`;
+    window.localStorage.setItem("rsn-last-whatsapp-url", url);
+    setHasUnlockedWhatsapp(true);
+    setIsContactModalOpen(false);
+  };
+
+  const openWhatsAppDirect = () => {
+    const unlockedUrl =
+      window.localStorage.getItem("rsn-last-whatsapp-url") ??
+      `${specialist.whatsapp}?text=${encodeURIComponent(
+        [
+          `Olá, ${specialist.name}.`,
+          formData.challenge ? `Meu desafio inicial é: ${formData.challenge}.` : "",
+          `Diagnóstico principal: ${diagnosis.title}.`,
+          formData.primaryGoal
+            ? `Objetivo principal: ${findOptionLabel(primaryGoalOptions, formData.primaryGoal)}.`
+            : "",
+          "Gostaria de entender a melhor solução para o meu momento.",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      )}`;
+
+    const url = unlockedUrl;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleConsultantLogin = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setConsultantAuthenticated(true);
+    setConsultantSection("dashboard");
+  };
+
+  const consultantStats = useMemo(() => {
+    const statusCount = consultantLeads.reduce<Record<ConsultantLead["status"], number>>(
+      (accumulator, lead) => {
+        accumulator[lead.status] += 1;
+        return accumulator;
+      },
+      {
+        Novo: 0,
+        "Em contato": 0,
+        Qualificado: 0,
+        "Reunião marcada": 0,
+      },
+    );
+
+    return [
+      { label: "Leads recebidos", value: consultantLeads.length.toString().padStart(2, "0") },
+      { label: "Em contato", value: statusCount["Em contato"].toString().padStart(2, "0") },
+      { label: "Reuniões marcadas", value: statusCount["Reunião marcada"].toString().padStart(2, "0") },
+      { label: "Qualificados", value: statusCount.Qualificado.toString().padStart(2, "0") },
+    ];
+  }, []);
 
   return (
     <div className="page-shell">
-      <div className="ambient ambient-left" />
-      <div className="ambient ambient-right" />
-
       <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark">RSN</span>
-          <div>
-            <strong>Resolva Seu Negócio</strong>
-            <span>Diagnóstico inteligente para PMEs</span>
-          </div>
-        </div>
+        <button className="brand brand-light brand-button" type="button" onClick={goHome} aria-label="Voltar para o início">
+          <img className="brand-logo brand-logo-symbol" src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
+          <img className="brand-logo brand-logo-horizontal" src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
+        </button>
 
-        <nav className="nav">
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#especialistas">Especialistas</a>
-          <button className="ghost-button" onClick={() => startDiagnosis()}>
+        <nav className="nav nav-light">
+          <button className={screen === "landing" ? "nav-link active" : "nav-link"} onClick={goHome}>
+            Início
+          </button>
+          <button
+            className={screen === "explore" ? "nav-link active" : "nav-link"}
+            onClick={() => {
+              setIsPersonalizedExplore(false);
+              setExploreQuery("");
+              setActiveExploreCategory("Todos");
+              setScreen("explore");
+            }}
+          >
+            Explorar
+          </button>
+          <button className={screen === "consultor" ? "nav-link active" : "nav-link"} onClick={openConsultantArea}>
+            Área do parceiro
+          </button>
+          {screen === "landing" && (
+            <>
+              <a href="#numeros">Números</a>
+              <a href="#categorias">Categorias</a>
+              <a href="#como-funciona">Como funciona</a>
+            </>
+          )}
+          <button className="nav-cta" onClick={() => startDiagnosis()}>
             Fazer diagnóstico
           </button>
         </nav>
       </header>
 
       {screen === "landing" && (
-        <main>
-          <section className="hero">
-            <div className="hero-copy">
-              <p className="eyebrow">Da dor ao especialista certo em poucos minutos</p>
-              <h1>Descubra o problema central do seu negócio e receba a recomendação ideal.</h1>
-              <p className="hero-text">
-                Você responde um diagnóstico rápido e a plataforma indica o especialista mais
-                aderente para destravar crescimento com velocidade.
+        <main className="landing-light">
+          <section className="search-hero">
+            <div className="search-hero-pattern" />
+            <div className="search-hero-glow" />
+            <div className="search-hero-content">
+              <p className="section-kicker centered">Resolva seu negócio</p>
+              <h1>
+                Conectamos você
+                <br />
+                à solução <span className="accent-word">exata</span>
+                <br />
+                para o seu
+                <br />
+                negócio
+              </h1>
+              <p className="hero-support">
+                Entenda o que trava seu negócio e com quem resolver isso primeiro.
               </p>
 
-              <form className="challenge-card" onSubmit={submitChallenge}>
-                <label htmlFor="challenge">Qual desafio você quer resolver?</label>
-                <div className="challenge-row">
-                  <input
-                    id="challenge"
-                    value={formData.challenge}
-                    onChange={(event) => updateField("challenge", event.target.value)}
-                    placeholder="Ex: meu time vende pouco e tudo depende de indicação"
-                  />
-                  <button className="primary-button" type="submit">
-                    Fazer diagnóstico
+              <form className="search-box" onSubmit={submitChallenge}>
+                <input
+                  id="challenge"
+                  value={formData.challenge}
+                  onChange={(event) => updateField("challenge", event.target.value)}
+                  placeholder="Ex: minha empresa vende, mas tudo depende de indicação"
+                />
+                <button className="search-button" type="submit">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" />
+                  </svg>
+                  Buscar solução
+                </button>
+              </form>
+
+              <div className="popular-row">
+                <span>Populares:</span>
+                {quickChallenges.map((challenge) => (
+                  <button
+                    className="light-tag"
+                    key={challenge}
+                    type="button"
+                    onClick={() => startDiagnosis(challenge)}
+                  >
+                    {challenge}
                   </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="logo-strip" aria-label="Frentes que mais travam empresas">
+            <div className="logo-marquee">
+              {[0, 1].map((track) => (
+                <div className="logo-marquee-track" key={track}>
+                  <span>frentes que mais travam empresas</span>
+                  {ecosystemLogos.map((logo) => (
+                    <strong key={`${track}-${logo}`}>{logo}</strong>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="light-section" id="como-funciona">
+            <div className="section-heading">
+              <p className="section-kicker">Como resolvemos</p>
+              <h2>
+                Você mostra a dor. A plataforma mostra o que fazer <span className="accent-word-inline">primeiro</span>.
+              </h2>
+            </div>
+
+            <div className="process-grid">
+              {howItWorks.map((item, index) => (
+                <article className="process-card" key={item.title}>
+                  <div className="process-illustration">{index + 1}</div>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="light-section" id="numeros">
+            <div className="numbers-showcase">
+              <div className="numbers-main">
+                <div className="section-heading">
+                  <p className="section-kicker">O tamanho do problema</p>
+                  <h2>O que é Resolva Seu Negócio em números:</h2>
                 </div>
 
-                <div className="tag-row">
-                  {quickChallenges.map((challenge) => (
+                <div className="numbers-grid">
+                  {numbers.map((item) => (
+                    <article className="number-card" key={`${item.prefix ?? ""}${item.value}${item.suffix ?? ""}`}>
+                      <strong>
+                        <AnimatedNumber value={item.value} prefix={item.prefix} suffix={item.suffix} />
+                      </strong>
+                      <p>{item.label}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <aside className="numbers-feed">
+                <div className="numbers-feed-copy">
+                  <p className="section-kicker">Principais dores</p>
+                  <h3>Todos os dias empresários nos reportam:</h3>
+                </div>
+                <AnimatedSignalList items={diagnosisSignals} />
+              </aside>
+            </div>
+          </section>
+
+          <section className="light-section" id="parceiros">
+            <div className="section-heading">
+              <p className="section-kicker">Quem resolve</p>
+              <h2>
+                Especialistas preparados para atacar <span className="accent-word-inline">dores reais</span> do negócio
+              </h2>
+              <p className="section-subtitle">
+                Consultores e parceiros para vendas, marketing, gestão e finanças.
+              </p>
+            </div>
+
+            <div className="partners-grid">
+              {featuredPartners.map((partner) => (
+                <article className="partner-card" key={partner.name}>
+                  <div className="partner-badge">{partner.name.slice(0, 1)}</div>
+                  <div className="partner-copy">
+                    <h3>{partner.name}</h3>
+                    <p className="partner-category">{partner.category}</p>
+                    <span>{partner.benefit}</span>
+                  </div>
+                  <button
+                    className="partner-link"
+                    type="button"
+                    onClick={() => startDiagnosis(partner.category)}
+                  >
+                    Ver mais
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="light-section" id="categorias">
+            <div className="section-heading centered-heading">
+              <p className="section-kicker">Por onde sua empresa está travando</p>
+              <h2>Explore por categoria</h2>
+              <p className="section-subtitle narrow">
+                Escolha a frente que mais pesa hoje. Se não souber, o diagnóstico encontra.
+              </p>
+            </div>
+
+            <div className="category-grid">
+              {categories.map((category) => (
+                <button
+                  className={category.accent ? "category-card accent category-card-button" : "category-card category-card-button"}
+                  key={category.title}
+                  type="button"
+                  onClick={() => openExploreCategory(category.exploreCategory)}
+                >
+                  <div className="category-icon">{category.title.slice(0, 1)}</div>
+                  <h3>{category.title}</h3>
+                  <p>{category.description}</p>
+                  <div className="category-meta">
+                    <span className="category-count">
+                      +{exploreItems.filter((item) => item.category === category.exploreCategory).length}
+                    </span>
+                    <span className="category-signal">{category.signal}</span>
+                  </div>
+                  <span className="category-link">
+                    Explorar categoria
+                  </span>
+                  <div className="category-footer-indicator" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="light-section">
+            <div className="section-heading centered-heading">
+              <p className="section-kicker">Antes e depois</p>
+              <h2>Da dor recorrente ao resultado certo.</h2>
+              <p className="section-subtitle narrow">
+                O diagnóstico mostra o que trava. A direção certa mostra o que começa a andar.
+              </p>
+            </div>
+
+            <div className="before-after-grid">
+              <article className="comparison-card">
+                <div className="numbers-feed-copy">
+                  <p className="section-kicker">Antes do diagnóstico</p>
+                  <h3>O que os empresários reportam quando chegam.</h3>
+                </div>
+                <AnimatedSignalList items={diagnosisSignals} />
+              </article>
+
+              <article className="comparison-card success">
+                <div className="numbers-feed-copy">
+                  <p className="section-kicker">Depois da direção certa</p>
+                  <h3>O que eles começam a relatar após agir com clareza.</h3>
+                </div>
+                <AnimatedSignalList items={successSignals} />
+              </article>
+            </div>
+          </section>
+
+          <section className="light-section cta-section">
+            <div className="cta-copy">
+              <p className="section-kicker">Pare de correr atrás do próprio rabo</p>
+              <h2>
+                Seu negócio não precisa de mais tentativa e erro. Precisa de <span className="accent-word-inline">direção</span>.
+              </h2>
+              <p className="section-subtitle">
+                Comece pelo diagnóstico e entenda qual gargalo atacar agora.
+              </p>
+              <button className="dark-button" type="button" onClick={() => startDiagnosis()}>
+                Fazer diagnóstico agora
+              </button>
+            </div>
+
+            <aside className="partner-cta-card">
+              <p className="section-kicker">Seja parceiro</p>
+              <h3>Você resolve dores empresariais de verdade?</h3>
+              <p>
+                Se sua especialidade destrava crescimento, faz sentido conversar com a gente.
+              </p>
+              <button className="gold-button" type="button">
+                Quero entrar na rede
+              </button>
+              <button className="ghost-button partner-secondary-cta" type="button" onClick={openConsultantArea}>
+                Ver área do parceiro
+              </button>
+            </aside>
+          </section>
+        </main>
+      )}
+
+      {screen === "explore" && (
+        <main className="explore-layout">
+          <section className="explore-hero">
+            <p className="section-kicker">
+              {isPersonalizedExplore ? "Conexão recomendada para sua empresa" : "Rede Resolva Seu Negócio"}
+            </p>
+            <h1>
+              Conectamos <span className="accent-word-inline">parceiros</span> e soluções para
+              cada desafio da sua empresa
+            </h1>
+            <p className="explore-support">
+              {isPersonalizedExplore
+                ? "Analisamos sua dor, cruzamos contexto, maturidade e prioridade para destacar a solução mais aderente ao seu momento."
+                : "Uma vitrine inicial com soluções, especialistas e parceiros para vendas, marketing, gestão, finanças, operações e tecnologia."}
+            </p>
+
+            {isPersonalizedExplore && (
+              <div className="explore-recommendation-banner">
+                <strong>Recomendação pronta.</strong>
+                <span>
+                  Com base nas suas respostas, destacamos a solução mais aderente e filtramos os parceiros que melhor atacam esse gargalo.
+                </span>
+              </div>
+            )}
+
+            <div className="explore-search-shell">
+              <input
+                className="explore-search-input"
+                value={exploreQuery}
+                onChange={(event) => setExploreQuery(event.target.value)}
+                placeholder="Buscar por nome, categoria ou tipo de dor..."
+              />
+              <button className="search-button" type="button">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                Buscar solução
+              </button>
+            </div>
+          </section>
+
+          <section className="explore-filter-bar">
+            <span className="explore-filter-label">Categorias</span>
+            <div className="explore-filter-chips">
+              {exploreCategories.map((category) => (
+                <button
+                  key={category}
+                  className={activeExploreCategory === category ? "explore-chip active" : "explore-chip"}
+                  type="button"
+                  onClick={() => setActiveExploreCategory(category)}
+                >
+                  {formatCategoryLabel(category)}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="explore-content">
+            <aside className="explore-sidebar">
+              <div className="explore-sidebar-card">
+                <p className="section-kicker">Categorias</p>
+                <div className="explore-sidebar-links">
+                  {exploreCategories.map((category) => (
                     <button
-                      className="tag"
-                      key={challenge}
+                      key={category}
+                      className={activeExploreCategory === category ? "sidebar-link active" : "sidebar-link"}
                       type="button"
-                      onClick={() => startDiagnosis(challenge)}
+                      onClick={() => setActiveExploreCategory(category)}
                     >
-                      {challenge}
+                      {formatCategoryLabel(category)}
                     </button>
                   ))}
                 </div>
-              </form>
-
-              <div className="hero-metrics">
-                <div>
-                  <strong>5 min</strong>
-                  <span>para concluir o diagnóstico</span>
-                </div>
-                <div>
-                  <strong>1 match</strong>
-                  <span>especialista recomendado por lead</span>
-                </div>
-                <div>
-                  <strong>MVP lean</strong>
-                  <span>curadoria manual no backstage</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="hero-panel">
-              <div className="panel-card panel-highlight">
-                <span className="panel-label">Framework do MVP</span>
-                <h2>Diagnóstico, recomendação e conversão.</h2>
-                <p>
-                  Em vez de abrir um marketplace caótico, o fluxo guia o empresário até o
-                  especialista mais adequado com base em sinais simples e acionáveis.
-                </p>
               </div>
 
-              <div className="panel-grid">
-                <article className="panel-card">
-                  <span className="panel-label">Entrada</span>
-                  <strong>Landing + busca de dor</strong>
-                  <p>Captura contexto e intenção logo no primeiro clique.</p>
-                </article>
-                <article className="panel-card">
-                  <span className="panel-label">Meio</span>
-                  <strong>Quiz adaptativo</strong>
-                  <p>Perguntas refinam a causa raiz por area crítica.</p>
-                </article>
-                <article className="panel-card">
-                  <span className="panel-label">Saída</span>
-                  <strong>Especialista único</strong>
-                  <p>Foco na conversão, sem excesso de opções no MVP.</p>
-                </article>
+              <div className="explore-sidebar-card">
+                <p className="section-kicker">Destaques</p>
+                <ul className="explore-sidebar-tags">
+                  <li>Consultores</li>
+                  <li>SaaS</li>
+                  <li>Parceiros</li>
+                  <li>Mais procurados</li>
+                </ul>
               </div>
-            </div>
-          </section>
+            </aside>
 
-          <section className="section" id="como-funciona">
-            <div className="section-heading">
-              <p className="eyebrow">Estrutura mais enxuta para validar</p>
-              <h2>Arquitetura recomendada para o MVP</h2>
-            </div>
-
-            <div className="insights-grid">
-              <article className="insight-card">
-                <strong>1. Comece sem perfil logado</strong>
-                <p>
-                  Para validar demanda, remova cadastro completo de empresário e especialista na
-                  primeira versão. Deixe o lead entrar pelo diagnóstico e mantenha especialistas
-                  como base curada no backoffice.
-                </p>
-              </article>
-              <article className="insight-card">
-                <strong>2. Troque marketplace por recomendação guiada</strong>
-                <p>
-                  O ganho aqui não é listar dezenas de consultores. É reduzir atrito e entregar
-                  clareza para quem ainda não sabe qual ajuda contratar.
-                </p>
-              </article>
-              <article className="insight-card">
-                <strong>3. Faça operação manual por trás</strong>
-                <p>
-                  Match, qualificação e repasse podem ser parcialmente manuais no início. Isso
-                  acelera lançamento e melhora aprendizado antes de automatizar.
-                </p>
-              </article>
-            </div>
-          </section>
-
-          <section className="section" id="especialistas">
-            <div className="section-heading">
-              <p className="eyebrow">Base inicial de parceiros</p>
-              <h2>Especialistas de entrada para o lançamento</h2>
-            </div>
-
-            <div className="specialist-grid">
-              {Object.values(specialists).map((entry) => (
-                <article className="specialist-card" key={entry.id}>
-                  <div className="specialist-avatar">{entry.name.slice(0, 1)}</div>
-                  <div>
-                    <p className="specialist-role">{entry.title}</p>
-                    <h3>{entry.name}</h3>
-                    <p className="specialist-focus">{entry.focus}</p>
+            <div className="explore-results">
+              {filteredExploreItems.map((item) => (
+                <article
+                  className={
+                    item.id === recommendedExploreId && isPersonalizedExplore
+                      ? "explore-result-card recommended"
+                      : "explore-result-card"
+                  }
+                  key={item.id}
+                >
+                  <div className="explore-result-brand">
+                    <div className="explore-result-logo">{item.name.slice(0, 1)}</div>
+                    <div>
+                      <p className="explore-result-kind">{item.kind}</p>
+                      <h3>{item.name}</h3>
+                      <span className="explore-result-badge">{formatCategoryLabel(item.category)}</span>
+                    </div>
                   </div>
-                  <ul>
-                    {entry.bullets.map((bullet) => (
-                      <li key={bullet}>{bullet}</li>
-                    ))}
-                  </ul>
-                  <a className="inline-link" href={entry.whatsapp} target="_blank" rel="noreferrer">
-                    Falar no WhatsApp
-                  </a>
+
+                  <div className="explore-result-about">
+                    <p className="explore-result-label">Sobre</p>
+                    <p>{item.description}</p>
+                    {item.badge && <small>{item.badge}</small>}
+                  </div>
+
+                  <div className="explore-result-meta">
+                    <p className="explore-result-label">Foco</p>
+                    <strong>{item.focus}</strong>
+                    <p className="explore-result-label">Para quem é</p>
+                    <span>{item.audience}</span>
+                  </div>
+
+                  <div className="explore-result-action">
+                    <button className="dark-button" type="button" onClick={() => startDiagnosis(item.focus)}>
+                      Ver detalhes
+                    </button>
+                  </div>
                 </article>
               ))}
+            </div>
+          </section>
+        </main>
+      )}
+
+      {screen === "loading" && (
+        <main className="loading-layout">
+          <section className="loading-card">
+            <img className="loading-logo" src="/logo-symbol.svg" alt="Resolva Seu Negócio" />
+            <p className="section-kicker">Analisando sua empresa</p>
+            <h1>Estamos cruzando suas respostas para conectar a solução ideal.</h1>
+            <p className="loading-copy">
+              Levando em conta dor inicial, momento do negócio, objetivo principal e contexto operacional para priorizar quem faz mais sentido para você agora.
+            </p>
+
+            <div className="loading-progress" aria-hidden="true">
+              <span />
+            </div>
+
+            <div className="loading-steps">
+              <div className="loading-step">
+                <strong>Lendo sua dor</strong>
+                <span>Interpretando o gargalo relatado no formulário inicial.</span>
+              </div>
+              <div className="loading-step">
+                <strong>Cruzando contexto</strong>
+                <span>Maturidade, objetivo e sinais operacionais entram na análise.</span>
+              </div>
+              <div className="loading-step">
+                <strong>Preparando conexão</strong>
+                <span>Selecionando as soluções e parceiros mais aderentes para você.</span>
+              </div>
             </div>
           </section>
         </main>
@@ -448,7 +1753,7 @@ function App() {
         <main className="quiz-layout">
           <section className="quiz-card">
             <div className="quiz-progress">
-              {[0, 1, 2, 3, 4].map((step) => (
+              {[0, 1, 2, 3, 4, 5].map((step) => (
                 <span
                   key={step}
                   className={step <= currentStep ? "progress-dot active" : "progress-dot"}
@@ -457,7 +1762,7 @@ function App() {
             </div>
 
             <div className="quiz-header">
-              <p className="eyebrow">Etapa {currentStep + 1} de 5</p>
+              <p className="section-kicker">Etapa {currentStep + 1} de 6</p>
               <h2>{stepTitle}</h2>
               <p>
                 {formData.challenge
@@ -467,139 +1772,104 @@ function App() {
             </div>
 
             {currentStep === 0 && (
-              <div className="form-grid">
-                <label>
-                  Segmento
-                  <input
-                    value={formData.segment}
-                    onChange={(event) => updateField("segment", event.target.value)}
-                    placeholder="Ex: varejo, servicos, industria"
-                  />
-                </label>
-                <label>
-                  Faturamento mensal
-                  <select
-                    value={formData.revenue}
-                    onChange={(event) => updateField("revenue", event.target.value)}
+              <div className="quiz-choice-list">
+                <p className="quiz-question">Qual o faturamento médio mensal da sua empresa hoje?</p>
+                {revenueProfileOptions.map((option, index) => (
+                  <button
+                    key={option.value}
+                    className={formData.revenueProfile === option.value ? "choice-card choice-card-detailed selected" : "choice-card choice-card-detailed"}
+                    type="button"
+                    onClick={() => updateField("revenueProfile", option.value)}
                   >
-                    <option value="">Selecione</option>
-                    <option value="ate_50k">Até R$ 50 mil</option>
-                    <option value="50k_200k">R$ 50 mil a R$ 200 mil</option>
-                    <option value="200k_1m">R$ 200 mil a R$ 1 mi</option>
-                    <option value="acima_1m">Acima de R$ 1 mi</option>
-                  </select>
-                </label>
-                <label>
-                  Numero de funcionarios
-                  <select
-                    value={formData.employees}
-                    onChange={(event) => updateField("employees", event.target.value)}
-                  >
-                    <option value="">Selecione</option>
-                    <option value="1_5">1 a 5</option>
-                    <option value="6_20">6 a 20</option>
-                    <option value="21_50">21 a 50</option>
-                    <option value="50_plus">Mais de 50</option>
-                  </select>
-                </label>
+                    <strong className="choice-index">{index + 1}.</strong>
+                    <span className="choice-detail">{option.label}</span>
+                  </button>
+                ))}
               </div>
             )}
 
             {currentStep === 1 && (
-              <div className="choice-grid">
-                {[
-                  ["vendas", "Vendas"],
-                  ["marketing", "Marketing"],
-                  ["gestao", "Gestão"],
-                  ["financeiro", "Financeiro"],
-                ].map(([value, label]) => (
+              <div className="quiz-choice-list">
+                <p className="quiz-question">Qual melhor descreve o momento atual da sua empresa?</p>
+                {businessMomentOptions.map((option, index) => (
                   <button
-                    key={value}
-                    className={formData.area === value ? "choice-card selected" : "choice-card"}
+                    key={option.value}
+                    className={formData.businessMoment === option.value ? "choice-card choice-card-detailed selected" : "choice-card choice-card-detailed"}
                     type="button"
-                    onClick={() => updateField("area", value as Area)}
+                    onClick={() => updateField("businessMoment", option.value)}
                   >
-                    <span>{label}</span>
-                    <small>Refinar diagnóstico nesta frente</small>
+                    <strong className="choice-index">{index + 1}.</strong>
+                    <span className="choice-detail">{option.label}</span>
                   </button>
                 ))}
               </div>
             )}
 
             {currentStep === 2 && (
-              <div className="form-grid">
-                {refinementContent[formData.area].fields.map((field) => (
-                  <label key={field.key}>
-                    {field.label}
-                    <select
-                      value={String(formData[field.key])}
-                      onChange={(event) =>
-                        updateField(field.key, event.target.value as FormData[typeof field.key])
-                      }
-                    >
-                      <option value="">Selecione</option>
-                      <option value="sim">Sim</option>
-                      <option value="nao">Não</option>
-                    </select>
-                  </label>
+              <div className="quiz-choice-list">
+                <p className="quiz-question">Como as decisões importantes são tomadas hoje na sua empresa?</p>
+                {decisionMakingOptions.map((option, index) => (
+                  <button
+                    key={option.value}
+                    className={formData.decisionMaking === option.value ? "choice-card choice-card-detailed selected" : "choice-card choice-card-detailed"}
+                    type="button"
+                    onClick={() => updateField("decisionMaking", option.value)}
+                  >
+                    <strong className="choice-index">{index + 1}.</strong>
+                    <span className="choice-detail">{option.label}</span>
+                  </button>
                 ))}
               </div>
             )}
 
             {currentStep === 3 && (
-              <div className="choice-grid urgency-grid">
-                {[
-                  ["imediato", "Preciso resolver agora"],
-                  ["30_dias", "Quero atacar nos próximos 30 dias"],
-                  ["sem_pressa", "Quero mapear sem urgência"],
-                ].map(([value, label]) => (
+              <div className="quiz-choice-list">
+                <p className="quiz-question">Qual dessas situações mais se aproxima dos desafios que você enfrenta hoje?</p>
+                {currentBottleneckOptions.map((option, index) => (
                   <button
-                    key={value}
-                    className={formData.timing === value ? "choice-card selected" : "choice-card"}
+                    key={option.value}
+                    className={formData.currentBottleneck === option.value ? "choice-card choice-card-detailed selected" : "choice-card choice-card-detailed"}
                     type="button"
-                    onClick={() => updateField("timing", value as Timing)}
+                    onClick={() => updateField("currentBottleneck", option.value)}
                   >
-                    <span>{label}</span>
+                    <strong className="choice-index">{index + 1}.</strong>
+                    <span className="choice-detail">{option.label}</span>
                   </button>
                 ))}
               </div>
             )}
 
             {currentStep === 4 && (
-              <div className="form-grid">
-                <label>
-                  Nome
-                  <input
-                    value={formData.name}
-                    onChange={(event) => updateField("name", event.target.value)}
-                    placeholder="Seu nome"
-                  />
-                </label>
-                <label>
-                  Email
-                  <input
-                    value={formData.email}
-                    onChange={(event) => updateField("email", event.target.value)}
-                    placeholder="voce@empresa.com"
-                    type="email"
-                  />
-                </label>
-                <label>
-                  Telefone
-                  <input
-                    value={formData.phone}
-                    onChange={(event) => updateField("phone", event.target.value)}
-                    placeholder="(85) 99999-9999"
-                  />
-                </label>
-                <label>
-                  Empresa
-                  <input
-                    value={formData.company}
-                    onChange={(event) => updateField("company", event.target.value)}
-                    placeholder="Nome da empresa"
-                  />
-                </label>
+              <div className="quiz-choice-list">
+                <p className="quiz-question">Você já buscou alguma solução para melhorar sua empresa?</p>
+                {solutionExperienceOptions.map((option, index) => (
+                  <button
+                    key={option.value}
+                    className={formData.solutionExperience === option.value ? "choice-card choice-card-detailed selected" : "choice-card choice-card-detailed"}
+                    type="button"
+                    onClick={() => updateField("solutionExperience", option.value)}
+                  >
+                    <strong className="choice-index">{index + 1}.</strong>
+                    <span className="choice-detail">{option.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {currentStep === 5 && (
+              <div className="quiz-choice-list">
+                <p className="quiz-question">Qual é o principal objetivo da sua empresa neste momento?</p>
+                {primaryGoalOptions.map((option, index) => (
+                  <button
+                    key={option.value}
+                    className={formData.primaryGoal === option.value ? "choice-card choice-card-detailed selected" : "choice-card choice-card-detailed"}
+                    type="button"
+                    onClick={() => updateField("primaryGoal", option.value)}
+                  >
+                    <strong className="choice-index">{index + 1}.</strong>
+                    <span className="choice-detail">{option.label}</span>
+                  </button>
+                ))}
               </div>
             )}
 
@@ -607,8 +1877,13 @@ function App() {
               <button className="ghost-button" type="button" onClick={previousStep}>
                 Voltar
               </button>
-              <button className="primary-button" type="button" onClick={nextStep}>
-                {currentStep === 4 ? "Ver recomendação" : "Continuar"}
+              <button
+                className="primary-button"
+                type="button"
+                onClick={nextStep}
+                disabled={!canContinue}
+              >
+                {currentStep === 5 ? "Ver recomendação" : "Continuar"}
               </button>
             </div>
           </section>
@@ -618,47 +1893,552 @@ function App() {
       {screen === "result" && (
         <main className="result-layout">
           <section className="result-card">
-            <p className="eyebrow">Diagnóstico concluído</p>
+            <p className="section-kicker">Diagnóstico concluído</p>
             <h1>{diagnosis.title}</h1>
             <p className="result-summary">{diagnosis.summary}</p>
 
-            <div className="result-grid">
-              <article className="result-panel">
-                <span className="panel-label">Especialista recomendado</span>
-                <h2>{specialist.name}</h2>
-                <p>{specialist.title}</p>
-                <ul>
-                  {specialist.bullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
-                  ))}
-                </ul>
+            <div className="result-diagnosis-strip">
+              <div className="result-diagnosis-chip">
+                <span>Objetivo principal</span>
+                <strong>{findOptionLabel(primaryGoalOptions, formData.primaryGoal)}</strong>
+              </div>
+              <div className="result-diagnosis-chip">
+                <span>Momento do negócio</span>
+                <strong>{findOptionLabel(businessMomentOptions, formData.businessMoment)}</strong>
+              </div>
+              <div className="result-diagnosis-chip">
+                <span>Direção sugerida</span>
+                <strong>{formatCategoryLabel(resultRecommendations.primary.category)}</strong>
+              </div>
+            </div>
+
+            <div className="result-recommendations">
+              <article className="explore-result-card recommended result-recommendation-primary">
+                <div className="explore-result-brand">
+                  <div className="explore-result-logo">{resultRecommendations.primary.name.slice(0, 1)}</div>
+                  <div>
+                    <p className="explore-result-kind">{resultRecommendations.primary.kind}</p>
+                    <h3>{resultRecommendations.primary.name}</h3>
+                    <span className="explore-result-badge">
+                      {formatCategoryLabel(resultRecommendations.primary.category)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="explore-result-about">
+                  <p className="explore-result-label">Por que faz sentido</p>
+                  <p>{resultRecommendations.primary.description}</p>
+                  <small>{resultRecommendations.primary.badge ?? "Melhor encaixe para o seu momento"}</small>
+                </div>
+
+                <div className="explore-result-meta">
+                  <p className="explore-result-label">Foco</p>
+                  <strong>{resultRecommendations.primary.focus}</strong>
+                  <p className="explore-result-label">Para quem é</p>
+                  <span>{resultRecommendations.primary.audience}</span>
+                </div>
+
+                <div className="explore-result-action explore-result-action-stack">
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() =>
+                      openContactModal({
+                        name: specialist.name,
+                        title: specialist.title,
+                        whatsapp: specialist.whatsapp,
+                      })
+                    }
+                  >
+                    Entrar em contato
+                  </button>
+                  {hasUnlockedWhatsapp ? (
+                    <button className="whatsapp-button" type="button" onClick={openWhatsAppDirect}>
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 11.5a8.5 8.5 0 0 1-12.76 7.38L4 20l1.18-3.1A8.5 8.5 0 1 1 20 11.5Z" />
+                        <path d="M8.8 10.6c.18-.4.37-.42.54-.43h.46c.15 0 .4.06.61.51.21.45.71 1.55.77 1.66.06.1.1.23.02.37-.08.14-.12.23-.25.35-.12.12-.26.27-.37.36-.12.1-.24.2-.1.39.13.2.6.98 1.3 1.6.89.79 1.63 1.04 1.86 1.16.23.12.36.1.5-.06.14-.16.58-.67.73-.9.16-.23.31-.2.52-.12.21.08 1.34.63 1.57.75.23.12.39.18.45.29.06.1.06.6-.14 1.18-.2.58-1.15 1.12-1.58 1.18-.4.06-.91.09-1.47-.1-.34-.11-.78-.25-1.35-.49-.96-.41-1.98-1.16-2.72-2.21-.74-1.05-1.18-2.09-1.31-2.89-.13-.8-.01-1.23.09-1.5Z" />
+                      </svg>
+                      Falar conosco
+                    </button>
+                  ) : (
+                    <p className="result-cta-hint">
+                      Preencha seus dados para liberar o contato direto no WhatsApp.
+                    </p>
+                  )}
+                </div>
               </article>
 
-              <article className="result-panel">
-                <span className="panel-label">Próximo passo</span>
-                <p>
-                  Pelo seu cenário, o melhor caminho é uma conversa orientada para entender causa
-                  raiz, nível de urgência e plano de ataque inicial.
-                </p>
-                <p>
-                  Lead: <strong>{formData.name || "Não informado"}</strong>
-                </p>
-                <p>
-                  Empresa: <strong>{formData.company || "Não informada"}</strong>
-                </p>
-              </article>
+              {resultRecommendations.secondary.length > 0 && (
+                <div className="result-secondary-block">
+                  <div className="section-heading">
+                    <p className="section-kicker">Outras recomendações</p>
+                    <h2>Alternativas aderentes ao seu momento</h2>
+                    <p className="section-subtitle">
+                      Se quiser comparar caminhos, estas são as opções secundárias mais próximas do seu diagnóstico.
+                    </p>
+                  </div>
+
+                  <div className="explore-results">
+                    {resultRecommendations.secondary.map((item) => (
+                      <article className="explore-result-card result-recommendation-secondary" key={item.id}>
+                        <div className="explore-result-brand">
+                          <div className="explore-result-logo">{item.name.slice(0, 1)}</div>
+                          <div>
+                            <p className="explore-result-kind">{item.kind}</p>
+                            <h3>{item.name}</h3>
+                            <span className="explore-result-badge">{formatCategoryLabel(item.category)}</span>
+                          </div>
+                        </div>
+
+                        <div className="explore-result-about">
+                          <p className="explore-result-label">Sobre o parceiro</p>
+                          <p>{item.description}</p>
+                          {item.badge && <small>{item.badge}</small>}
+                        </div>
+
+                        <div className="explore-result-meta">
+                          <p className="explore-result-label">Foco</p>
+                          <strong>{item.focus}</strong>
+                          <p className="explore-result-label">Para quem é</p>
+                          <span>{item.audience}</span>
+                        </div>
+
+                        <div className="explore-result-action">
+                          <button className="dark-button" type="button" onClick={() => openExploreCategory(item.category)}>
+                            Ver alternativa
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="result-actions">
-              <a className="primary-button" href={specialist.whatsapp} target="_blank" rel="noreferrer">
-                Falar com especialista
-              </a>
               <button className="ghost-button" onClick={() => setScreen("landing")}>
-                Refazer diagnóstico
+                Voltar para o início
+              </button>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => {
+                  setIsPersonalizedExplore(true);
+                  setScreen("explore");
+                }}
+              >
+                Ver todas as recomendações
               </button>
             </div>
           </section>
         </main>
+      )}
+
+      {screen === "consultor" && (
+        <main className="consultant-layout">
+          {!consultantAuthenticated ? (
+            <section className="consultant-auth-shell">
+              <div className="consultant-auth-copy">
+                <p className="section-kicker">Área do parceiro</p>
+                <h1>CRM operacional para seus leads mais quentes.</h1>
+                <p>
+                  Uma área para o consultor e para o time comercial trabalharem leads, diagnóstico, agenda e histórico
+                  de contato com mais velocidade.
+                </p>
+
+                <div className="consultant-auth-points">
+                  <div>
+                    <strong>Leads com contexto</strong>
+                    <span>Receba dor inicial, diagnóstico e objetivo principal no mesmo lugar.</span>
+                  </div>
+                  <div>
+                    <strong>Agenda integrada</strong>
+                    <span>Organize disponibilidade do time e acelere a marcação de reunião.</span>
+                  </div>
+                  <div>
+                    <strong>Execução comercial</strong>
+                    <span>Distribua, qualifique e avance os leads sem depender de planilhas soltas.</span>
+                  </div>
+                </div>
+              </div>
+
+              <section className="consultant-login-card">
+                <p className="section-kicker">Login do parceiro</p>
+                <h2>Entre na sua instância</h2>
+                <p>Autenticação inicial para consultor, SDR ou gestor do parceiro.</p>
+
+                <form className="consultant-login-form" onSubmit={handleConsultantLogin}>
+                  <label>
+                    Email
+                    <input
+                      value={consultantForm.email}
+                      onChange={(event) => setConsultantForm((previous) => ({ ...previous, email: event.target.value }))}
+                      type="email"
+                      placeholder="voce@parceiro.com"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Senha
+                    <input
+                      value={consultantForm.password}
+                      onChange={(event) => setConsultantForm((previous) => ({ ...previous, password: event.target.value }))}
+                      type="password"
+                      placeholder="Digite sua senha"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Instância
+                    <input
+                      value={consultantForm.instance}
+                      onChange={(event) => setConsultantForm((previous) => ({ ...previous, instance: event.target.value }))}
+                      placeholder="ex: marcos-tavares"
+                      required
+                    />
+                  </label>
+                  <button className="primary-button" type="submit">
+                    Entrar na área do parceiro
+                  </button>
+                </form>
+              </section>
+            </section>
+          ) : (
+            <section className="consultant-dashboard">
+              <aside className="consultant-sidebar">
+                <div className="consultant-sidebar-brand">
+                  <img src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
+                  <div>
+                    <strong>Instância ativa</strong>
+                    <span>{consultantForm.instance || "parceiro-rsn"}</span>
+                  </div>
+                </div>
+
+                <div className="consultant-sidebar-nav">
+                  {[
+                    { id: "dashboard", label: "Dashboard" },
+                    { id: "leads", label: "Leads" },
+                    { id: "agenda", label: "Agenda" },
+                    { id: "perfil", label: "Perfil" },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      className={consultantSection === item.id ? "consultant-nav-link active" : "consultant-nav-link"}
+                      type="button"
+                      onClick={() => setConsultantSection(item.id as ConsultantSection)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="consultant-sidebar-card">
+                  <p className="section-kicker">Próxima reunião</p>
+                  <strong>{consultantAgenda[0].company}</strong>
+                  <span>{consultantAgenda[0].startsAt}</span>
+                  <small>{consultantAgenda[0].title}</small>
+                </div>
+              </aside>
+
+              <div className="consultant-main">
+                <div className="consultant-header">
+                  <div>
+                    <p className="section-kicker">CRM do parceiro</p>
+                    <h1>
+                      {consultantSection === "dashboard"
+                        ? "Visão geral do comercial"
+                        : consultantSection === "leads"
+                          ? "Leads e diagnósticos"
+                          : consultantSection === "agenda"
+                            ? "Agenda e disponibilidade"
+                            : "Perfil e operação do parceiro"}
+                    </h1>
+                    <p>
+                      {consultantSection === "dashboard"
+                        ? "Uma leitura rápida da operação comercial do parceiro, com dados do diagnóstico e status dos leads."
+                        : consultantSection === "leads"
+                          ? "Acompanhe cada lead com contexto completo de diagnóstico, momento do negócio e objetivo principal."
+                          : consultantSection === "agenda"
+                            ? "Controle disponibilidade, próximos slots e reuniões quentes vindas do diagnóstico."
+                            : "Configure dados públicos do parceiro, equipe comercial e regras de atendimento."}
+                    </p>
+                  </div>
+                  <button className="ghost-button" type="button" onClick={() => setConsultantAuthenticated(false)}>
+                    Sair da instância
+                  </button>
+                </div>
+
+                {consultantSection === "dashboard" && (
+                  <>
+                    <div className="consultant-stats-grid">
+                      {consultantStats.map((stat) => (
+                        <article className="consultant-stat-card" key={stat.label}>
+                          <span>{stat.label}</span>
+                          <strong>{stat.value}</strong>
+                        </article>
+                      ))}
+                    </div>
+
+                    <div className="consultant-panels">
+                      <section className="consultant-panel">
+                        <div className="consultant-panel-header">
+                          <h2>Leads mais recentes</h2>
+                          <span>Entrada via diagnóstico</span>
+                        </div>
+                        <div className="consultant-lead-list">
+                          {consultantLeads.slice(0, 3).map((lead) => (
+                            <article className="consultant-lead-card" key={lead.id}>
+                              <div>
+                                <strong>{lead.company}</strong>
+                                <span>
+                                  {lead.contact} · {lead.role}
+                                </span>
+                              </div>
+                              <div className="consultant-lead-meta">
+                                <span className={`status-pill status-${toStatusClassName(lead.status)}`}>
+                                  {lead.status}
+                                </span>
+                                <small>{lead.updatedAt}</small>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="consultant-panel">
+                        <div className="consultant-panel-header">
+                          <h2>Agenda do time</h2>
+                          <span>Próximos slots confirmados</span>
+                        </div>
+                        <div className="consultant-agenda-list">
+                          {consultantAgenda.map((item) => (
+                            <article className="consultant-agenda-card" key={item.id}>
+                              <div>
+                                <strong>{item.title}</strong>
+                                <span>{item.company}</span>
+                              </div>
+                              <div className="consultant-agenda-meta">
+                                <small>{item.startsAt}</small>
+                                <span className={`status-pill status-${toStatusClassName(item.status)}`}>{item.status}</span>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  </>
+                )}
+
+                {consultantSection === "leads" && (
+                  <section className="consultant-data-table">
+                    <div className="consultant-table-header">
+                      <span>Empresa</span>
+                      <span>Diagnóstico</span>
+                      <span>Objetivo</span>
+                      <span>Status</span>
+                      <span>Atualização</span>
+                    </div>
+                    {consultantLeads.map((lead) => (
+                      <article className="consultant-table-row" key={lead.id}>
+                        <div>
+                          <strong>{lead.company}</strong>
+                          <span>{lead.contact}</span>
+                        </div>
+                        <p>{lead.diagnosis}</p>
+                        <p>{lead.objective}</p>
+                        <span className={`status-pill status-${toStatusClassName(lead.status)}`}>{lead.status}</span>
+                        <small>{lead.updatedAt}</small>
+                      </article>
+                    ))}
+                  </section>
+                )}
+
+                {consultantSection === "agenda" && (
+                  <div className="consultant-panels">
+                    <section className="consultant-panel">
+                      <div className="consultant-panel-header">
+                        <h2>Disponibilidade padrão</h2>
+                        <span>Base para reunião quente</span>
+                      </div>
+                      <div className="consultant-availability-grid">
+                        {[
+                          "Seg · 09:00 às 12:00",
+                          "Seg · 14:00 às 17:00",
+                          "Qua · 09:00 às 12:00",
+                          "Qui · 14:00 às 18:00",
+                        ].map((slot) => (
+                          <span className="availability-slot" key={slot}>
+                            {slot}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="consultant-panel">
+                      <div className="consultant-panel-header">
+                        <h2>Reuniões marcadas</h2>
+                        <span>Fluxo rápido para SDRs</span>
+                      </div>
+                      <div className="consultant-agenda-list">
+                        {consultantAgenda.map((item) => (
+                          <article className="consultant-agenda-card" key={item.id}>
+                            <div>
+                              <strong>{item.title}</strong>
+                              <span>{item.company}</span>
+                            </div>
+                            <div className="consultant-agenda-meta">
+                              <small>{item.startsAt}</small>
+                              <span>{item.owner}</span>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                )}
+
+                {consultantSection === "perfil" && (
+                  <div className="consultant-panels">
+                    <section className="consultant-panel">
+                      <div className="consultant-panel-header">
+                        <h2>Perfil público do parceiro</h2>
+                        <span>Dados exibidos na recomendação</span>
+                      </div>
+                      <div className="consultant-profile-grid">
+                        <div>
+                          <span>Nome</span>
+                          <strong>Marcos Tavares</strong>
+                        </div>
+                        <div>
+                          <span>Especialidade</span>
+                          <strong>Operação Comercial</strong>
+                        </div>
+                        <div>
+                          <span>Foco</span>
+                          <strong>Previsibilidade, playbook e rotina de gestão</strong>
+                        </div>
+                        <div>
+                          <span>Canal principal</span>
+                          <strong>WhatsApp + reunião de diagnóstico</strong>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="consultant-panel">
+                      <div className="consultant-panel-header">
+                        <h2>Recomendação de stack</h2>
+                        <span>Base recomendada para este produto</span>
+                      </div>
+                      <div className="consultant-recommendation-copy">
+                        <strong>Recomendação: Supabase</strong>
+                        <p>
+                          Para esse produto, Supabase faz mais sentido que Railway porque reduz tempo de implementação,
+                          entrega autenticação pronta para parceiros, Postgres gerenciado, RLS para separar instâncias,
+                          storage e edge functions no mesmo stack.
+                        </p>
+                        <ul>
+                          <li>Auth para parceiros e equipe comercial</li>
+                          <li>Postgres com isolamento por instância</li>
+                          <li>Policies por parceiro e por membro do time</li>
+                          <li>Facilidade para agenda, leads, notas e histórico</li>
+                        </ul>
+                      </div>
+                    </section>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+        </main>
+      )}
+
+      {isContactModalOpen && contactTarget && (
+        <div className="modal-overlay" role="presentation" onClick={closeContactModal}>
+          <section
+            className="contact-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="contact-modal-header">
+              <div>
+                <p className="section-kicker">Entrar em contato</p>
+                <h2 id="contact-modal-title">{contactTarget.name}</h2>
+                <p>{contactTarget.title}</p>
+              </div>
+              <button className="modal-close" type="button" onClick={closeContactModal} aria-label="Fechar modal">
+                ×
+              </button>
+            </div>
+
+            <form className="contact-modal-form" onSubmit={submitContactRequest}>
+              <label>
+                Nome completo
+                <input
+                  value={formData.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  placeholder="Seu nome completo"
+                  required
+                />
+              </label>
+              <label>
+                Email
+                <input
+                  value={formData.email}
+                  onChange={(event) => updateField("email", event.target.value)}
+                  placeholder="voce@empresa.com"
+                  type="email"
+                  required
+                />
+              </label>
+              <label>
+                Telefone
+                <input
+                  value={formData.phone}
+                  onChange={(event) => updateField("phone", event.target.value)}
+                  placeholder="(85) 99999-9999"
+                  required
+                />
+              </label>
+              <label>
+                Cargo
+                <input
+                  value={formData.role}
+                  onChange={(event) => updateField("role", event.target.value)}
+                  placeholder="Ex: CEO, diretora comercial, operações"
+                  required
+                />
+              </label>
+              <label>
+                Dor principal
+                <textarea
+                  value={formData.mainPain}
+                  onChange={(event) => updateField("mainPain", event.target.value)}
+                  placeholder="Descreva em poucas palavras o que mais está travando seu negócio hoje"
+                  required
+                />
+              </label>
+
+              <div className="contact-modal-actions">
+                <button className="ghost-button" type="button" onClick={closeContactModal}>
+                  Cancelar
+                </button>
+                <button className="primary-button" type="submit">
+                  Enviar contato
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
       )}
     </div>
   );
