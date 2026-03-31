@@ -1,570 +1,318 @@
 # Resolva Seu Negócio
 
-Aplicação frontend em React + Vite para diagnóstico empresarial orientado a conversão.
+Frontend React + Vite para diagnóstico empresarial, recomendação de especialistas/parceiros/SaaS e operação inicial da área do parceiro.
 
-O produto foi desenhado como um MVP de recomendação guiada:
+O objetivo do produto hoje é transformar uma dor difusa do empresário em:
 
-`landing -> input inicial -> quiz -> loading de análise -> explore personalizado -> conexão com especialista/solução`
+1. leitura de contexto
+2. diagnóstico principal
+3. recomendação mais aderente
+4. abertura de contato comercial
 
-Este documento existe para dar contexto rápido e técnico para próximos colaboradores humanos ou IAs.
+## Estado atual real do produto
 
-## Visão Macro
+O projeto já implementa uma experiência única no frontend com seis telas/estados principais:
 
-### O que o produto é
+- `landing`
+- `quiz`
+- `loading`
+- `result`
+- `explore`
+- `consultor`
 
-O Resolva Seu Negócio é uma interface de diagnóstico para empresas que ainda não sabem exatamente qual frente está travando o crescimento.
+Não existe backend ativo no app atual. Toda a experiência roda com estado local, catálogos estáticos e dados mockados.
 
-O objetivo não é funcionar como marketplace aberto clássico.
-
-O objetivo atual é:
-
-- captar a dor inicial do empresário
-- aprofundar contexto com um quiz curto
-- inferir a frente mais crítica
-- recomendar especialistas, parceiros ou SaaS mais aderentes
-- empurrar o usuário para o próximo passo comercial
-
-### O que o produto não é, neste estágio
-
-- não há autenticação
-- não há backend
-- não há persistência de dados
-- não há CMS
-- não há integração real com CRM, WhatsApp ou banco de dados
-- não existe engine de matching externa; a lógica atual é local e heurística
-
-### Stack atual
+## Stack atual
 
 - React 18
 - TypeScript
 - Vite 5
 - CSS global em arquivo único
 
-### Filosofia de arquitetura
-
-O projeto está propositalmente simples e monolítico.
-
-Hoje a aplicação vive basicamente em:
+Arquivos centrais:
 
 - [src/App.tsx](/Users/kauanbatista/Resolva Seu Negócio/src/App.tsx)
 - [src/styles.css](/Users/kauanbatista/Resolva Seu Negócio/src/styles.css)
+- [docs/partner-crm-architecture.md](/Users/kauanbatista/Resolva Seu Negócio/docs/partner-crm-architecture.md)
+- [database/schema.sql](/Users/kauanbatista/Resolva Seu Negócio/database/schema.sql)
 
-Essa decisão faz sentido no MVP porque:
+## Fluxo atualizado do produto
 
-- o fluxo ainda muda com frequência
-- o domínio ainda está sendo lapidado
-- há mais valor em velocidade do que em abstração prematura
+Fluxo principal do empresário:
 
-Quando o produto estabilizar, a extração natural será:
+1. entra na `landing`
+2. descreve um desafio livre ou usa um atalho popular
+3. inicia o `quiz`
+4. responde 6 etapas de diagnóstico
+5. vai para `loading`, que simula a análise
+6. recebe a tela `result` com diagnóstico, resumo e recomendação principal
+7. abre o modal de contato, preenche dados e libera o CTA de WhatsApp
+8. pode seguir para `explore` para comparar alternativas
 
-1. `data/` para catálogos estáticos
-2. `components/` para blocos reutilizáveis
-3. `features/` por fluxo: landing, quiz, explore, result
-4. `lib/` para regras de matching e helpers
+Fluxos secundários já implementados:
 
-## Visão de Produto
+- navegação direta da `landing` para `explore` por categoria
+- navegação para `consultor` pela topbar e CTAs da landing
+- `explore` em dois modos: aberto e personalizado pelo diagnóstico
 
-### Jornada principal
+## Telas existentes
 
-1. Usuário entra na landing
-2. Digita uma dor inicial ou usa um atalho popular
-3. Inicia o diagnóstico
-4. Responde 6 etapas
-5. Entra em uma tela intermediária de análise
-6. Vai para a tela `explore`, já personalizada pela leitura do diagnóstico
-7. Pode revisar a recomendação e iniciar contato
+### `landing`
 
-### Telas existentes
+Tela comercial principal com:
 
-- `landing`
-- `quiz`
-- `loading`
-- `explore`
-- `result`
+- hero com busca por dor inicial
+- chips de desafios populares
+- marquee de áreas do ecossistema
+- seção "como funciona"
+- números animados
+- vitrine de parceiros em destaque
+- categorias clicáveis para explorar soluções
+- seção comparativa antes/depois
+- CTA para diagnóstico e CTA para área do parceiro
 
-### Intenção de cada tela
+### `quiz`
 
-#### `landing`
+Fluxo de diagnóstico em 6 etapas:
 
-Função comercial.
+1. `revenueProfile`
+2. `businessMoment`
+3. `decisionMaking`
+4. `currentBottleneck`
+5. `solutionExperience`
+6. `primaryGoal`
 
-Responsável por:
+O `challenge` livre capturado na landing continua no estado e influencia a inferência da área recomendada.
 
-- explicar a proposta de valor
-- provocar identificação com dores reais
-- converter o usuário para o diagnóstico
-- permitir navegação secundária para `explore`
+### `loading`
 
-#### `quiz`
+Tela intermediária de transição. Hoje ela apenas sustenta a narrativa de análise e, após timeout local, leva para `result`.
 
-Função de qualificação.
+### `result`
 
-Responsável por:
+Tela de fechamento do diagnóstico com:
 
-- levantar contexto da empresa
-- identificar a área mais crítica
-- entender maturidade atual
-- capturar percepção explícita de gargalo
-- medir urgência
-- coletar lead
+- título do diagnóstico principal
+- resumo do cenário
+- recomendação principal
+- recomendações secundárias
+- CTA para contato
+- desbloqueio de WhatsApp após preenchimento do modal
 
-#### `loading`
+### `explore`
 
-Função narrativa e de transição.
+Vitrine de soluções com:
 
-Responsável por:
+- busca por nome, categoria, foco ou descrição
+- filtro por categorias
+- destaque de recomendação quando o fluxo vem do quiz
+- catálogo misto de `Consultor`, `Parceiro` e `SaaS`
 
-- sustentar a sensação de análise
-- preparar a passagem para recomendação personalizada
+### `consultor`
 
-#### `explore`
+Área do parceiro já visível no frontend, ainda sem backend real.
 
-Função de recomendação e descoberta.
+Estado atual da tela:
 
-Tem dois modos:
+- login mockado com `email`, `password` e `instance`
+- autenticação apenas local no estado
+- navegação interna por seções
 
-- aberto: navegação normal por categorias
-- personalizado: entra após o quiz com filtros e destaque guiados pelo diagnóstico
+Seções implementadas:
 
-#### `result`
+- `dashboard`: métricas resumidas, leads recentes e agenda do time
+- `leads`: tabela com empresa, diagnóstico, objetivo, status e atualização
+- `agenda`: disponibilidade padrão e reuniões marcadas
+- `perfil`: perfil público do parceiro e recomendação de stack
 
-Função de fechamento.
+Dados atuais da área do parceiro:
 
-Responsável por:
+- leads mockados no próprio `App.tsx`
+- agenda mockada no próprio `App.tsx`
+- estatísticas derivadas desses mocks com `useMemo`
 
-- sintetizar o diagnóstico
-- apontar o especialista principal
-- abrir caminho para contato comercial
+## Modelo atual de diagnóstico
 
-## Visão Micro
+O app usa heurística local para inferir a área principal do negócio:
 
-## Estrutura de código
-
-### Arquivo principal
-
-[src/App.tsx](/Users/kauanbatista/Resolva Seu Negócio/src/App.tsx) concentra:
-
-- tipos da aplicação
-- catálogo estático de especialistas
-- catálogo estático do `explore`
-- configuração de categorias e conteúdo da landing
-- lógica de diagnóstico
-- controle de navegação por tela
-- renderização de toda a interface
-
-### Estilos
-
-[src/styles.css](/Users/kauanbatista/Resolva Seu Negócio/src/styles.css) concentra:
-
-- tokens visuais da marca
-- layout
-- estados de hover
-- responsividade
-- animações leves
-
-## Modelo de estado
-
-O estado principal é controlado localmente com `useState`.
-
-Variáveis centrais:
-
-- `screen`
-- `currentStep`
-- `formData`
-- `activeExploreCategory`
-- `exploreQuery`
-- `isPersonalizedExplore`
-
-### `screen`
-
-Define qual experiência está ativa:
-
-- `"landing"`
-- `"explore"`
-- `"quiz"`
-- `"loading"`
-- `"result"`
-
-### `currentStep`
-
-Controla a etapa atual do quiz.
-
-Hoje o quiz possui 6 etapas.
-
-### `formData`
-
-É o payload completo da jornada de diagnóstico.
-
-Campos atuais:
-
-- `challenge`
-- `segment`
-- `revenue`
-- `employees`
-- `area`
-- `customArea`
-- `alreadyInvested`
-- `currentSolutionArea`
-- `currentSolutionOther`
-- `perceivedBottleneck`
-- `timing`
-- `name`
-- `email`
-- `phone`
-- `company`
-
-## Tipos de domínio
-
-### `Area`
-
-Enum lógica:
-
-- `vendas`
-- `marketing`
-- `gestao`
 - `financeiro`
-- `outros`
+- `marketing`
+- `vendas`
+- `gestao`
+- fallback em `outros`
 
-Importante:
+A inferência combina:
 
-Os valores internos de regra permanecem em ASCII por estabilidade de comparação.
+- palavras-chave do campo `challenge`
+- respostas de `primaryGoal`
+- respostas de `currentBottleneck`
+- faixa de `revenueProfile`
 
-Exemplo:
+Com base nisso, o app gera:
 
-- interno: `gestao`
-- display: `Gestão`
+- `specialist` principal
+- `diagnosis.title`
+- `diagnosis.summary`
+- categoria preferencial do `explore`
+- recomendação principal e secundárias na tela `result`
 
-Essa diferença é intencional.
+## `FormData` atual
 
-### `Specialist`
+O payload atual do usuário no frontend é:
 
-Representa a recomendação de especialista principal por frente.
+```ts
+type FormData = {
+  challenge: string;
+  revenueProfile: RevenueProfile | "";
+  businessMoment: BusinessMoment | "";
+  decisionMaking: DecisionMaking | "";
+  currentBottleneck: CurrentBottleneck | "";
+  solutionExperience: SolutionExperience | "";
+  primaryGoal: PrimaryGoal | "";
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  mainPain: string;
+};
+```
 
-Campos:
+Diferença importante em relação ao README antigo:
 
-- `id`
-- `name`
-- `title`
-- `focus`
-- `description`
-- `bullets`
-- `whatsapp`
+- saíram campos como `segment`, `employees`, `area`, `timing`, `company` e derivados antigos
+- entraram campos orientados a maturidade e decisão, mais adequados ao posicionamento atual do produto
+- os dados pessoais agora são coletados no modal de contato, não dentro do quiz principal
 
-### `ExploreItem`
+## Catálogos estáticos atuais
 
-Representa itens da vitrine/recomendação.
+O frontend hoje depende de dados fixos em [src/App.tsx](/Users/kauanbatista/Resolva Seu Negócio/src/App.tsx):
 
-Campos:
-
-- `id`
-- `name`
-- `kind`
-- `category`
-- `focus`
-- `audience`
-- `description`
-- `badge`
-
-### `NumberItem`
-
-Representa os cards de prova/escala da landing.
-
-Campos:
-
-- `value`
-- `prefix`
-- `suffix`
-- `label`
-
-### `SignalItem`
-
-Representa entradas da lista animada de “principais dores”.
-
-Campos:
-
-- `title`
-- `description`
-- `icon`
-- `accent`
-- `time`
-
-## Componentes locais relevantes
-
-### `AnimatedSignalList`
-
-Lista animada vertical usada na seção de “Principais dores”.
-
-Função:
-
-- criar sensação de movimento e recorrência de dores
-- reforçar prova contextual sem depender de backend
-
-### `AnimatedNumber`
-
-Contador progressivo simples baseado em `requestAnimationFrame`.
-
-Função:
-
-- animar os números da seção de prova sem usar ticker por dígito
-- manter responsividade e previsibilidade visual
-
-Critério atual:
-
-- anima apenas quando entra na viewport
-- usa easing cúbico simples
-- não depende de biblioteca externa
-
-### `formatCategoryLabel`
-
-Helper de exibição.
-
-Resolve rótulos internos ASCII para display com acento.
-
-Exemplo:
-
-- `Gestao & Estrategia` -> `Gestão & Estratégia`
-- `Financas` -> `Finanças`
-- `Operacoes` -> `Operações`
-
-## Regras de Negócio Atuais
-
-### Diagnóstico
-
-O diagnóstico é calculado em um `useMemo`, com base principalmente em:
-
-- `area`
-- `alreadyInvested`
-- `currentSolutionArea`
-- `perceivedBottleneck`
-
-Hoje a inferência é heurística, usando combinações simples de:
-
-- área escolhida
-- presença de certas palavras na descrição do gargalo
-- maturidade percebida
-
-Isso é suficiente para o MVP, mas ainda não é uma engine robusta.
-
-### Recomendação do `explore`
-
-Após o quiz:
-
-- o sistema entra em `loading`
-- um `setTimeout` simula a análise
-- a categoria do `explore` é pré-selecionada conforme a área detectada
-- a busca recebe a dor inicial ou área personalizada
-- `isPersonalizedExplore` muda para `true`
-
-Depois disso:
-
-- o `explore` destaca um item como recomendação principal
-- a lista continua navegável
-
-### Cálculo do item recomendado
-
-O item recomendado é obtido por uma heurística simples:
-
-- mapeia `formData.area` para uma categoria do `explore`
-- tenta encontrar o primeiro item da mesma categoria dentro da lista filtrada
-- se não achar, usa o primeiro item disponível
-
-## Conteúdo Estático
-
-Atualmente quase todo o conteúdo é local e estático:
-
-- especialistas
-- cards da landing
-- categorias
-- parceiros em destaque
+- especialistas por área
+- parceiros em destaque da landing
+- categorias do ecossistema
 - itens do `explore`
-- números
-- lista de dores
+- leads mockados da área do parceiro
+- agenda mockada da área do parceiro
 
-Isso permite iterar rápido, mas tem implicações:
+Isso mantém o MVP rápido para iteração, mas também concentra demais regra, conteúdo e UI num único arquivo.
 
-- cada alteração de catálogo exige deploy
-- não existe separação entre camada de conteúdo e camada de UI
-- revisões de copy tendem a acontecer dentro de `App.tsx`
+## O que o produto ainda não tem
 
-## Sistema Visual
+- autenticação real
+- persistência de leads
+- persistência do quiz
+- CRM funcional de parceiro
+- agendamento real
+- integração com WhatsApp Business API
+- integração com CRM externo
+- distribuição automática de leads por parceiro
+- painel admin separado
+- backend para regras, logs e auditoria
 
-### Direção de marca
+## Riscos atuais
 
-A identidade atual usa:
+### 1. Estado e domínio concentrados demais
 
-- base escura
-- laranja como cor de acento
-- neutros quentes
-- serifada editorial nos títulos
-- UI premium com hover discreto
+Quase toda a aplicação vive em [src/App.tsx](/Users/kauanbatista/Resolva Seu Negócio/src/App.tsx), incluindo tipos, catálogos, regras de inferência, navegação e renderização. Isso aumenta acoplamento e torna a evolução mais arriscada.
 
-### Princípios de interface
+### 2. Heurística de diagnóstico ainda frágil
 
-- hover sutil, nunca agressivo
-- cards como unidade interativa, não só botões internos
-- contraste controlado, evitando “preto máximo + laranja máximo” o tempo todo
-- mobile first nas áreas mais sensíveis
+A recomendação depende de palavras-chave livres e condicionais locais. Isso pode gerar diagnósticos inconsistentes ou enviesados conforme o texto digitado.
 
-### Ponto de atenção
+### 3. Área do parceiro é apenas protótipo visual
 
-O projeto já passou por algumas tentativas visuais mais intensas. A direção atual busca:
+A tela `consultor` passa sensação de produto operacional, mas hoje não há autenticação real, multi-tenant, escrita em banco, agenda persistida ou histórico de atendimento.
 
-- manter força de marca
-- evitar parecer cópia da G4
-- preservar clareza comercial
+### 4. Dados comerciais podem se perder
 
-## Responsividade
+O fluxo de contato monta mensagem e libera WhatsApp, mas não grava lead em backend. Se a sessão for perdida, não há trilha operacional confiável.
 
-O CSS já possui breakpoints principais para:
+### 5. Conteúdo estático dificulta escala
 
-- até `1100px`
-- até `860px`
-- até `640px`
+Especialistas, categorias, copy e catálogo estão hardcoded. Isso dificulta onboarding de novos parceiros e ajustes rápidos sem deploy.
 
-Áreas mais sensíveis para validar sempre:
+### 6. Falta de separação entre jornada do empresário e operação do parceiro
 
-- hero principal
-- topbar e logo
-- seção de números
-- cards de categoria
-- sidebar e listagem do `explore`
-- quiz
+As duas experiências coexistem no mesmo arquivo e no mesmo frontend sem fronteira clara de domínio, autenticação ou autorização.
 
-Sempre que mexer em layout, revisar desktop e mobile.
+## Roadmap técnico recomendado
 
-## Convenções práticas
+Ordem pragmática para evolução:
 
-### Texto
+### Fase 1. Consolidar a base do frontend
 
-- interface em português brasileiro
-- evitar inglês desnecessário
-- manter acentuação correta em display
-- não alterar chaves internas ASCII sem revisar toda a lógica
+- extrair tipos e catálogos para módulos dedicados
+- separar features por fluxo: `landing`, `quiz`, `result`, `explore`, `consultor`
+- isolar a lógica de diagnóstico em funções puras testáveis
+- preparar um contrato único para lead e diagnóstico
 
-### Navegação
+### Fase 2. Persistência e autenticação
 
-A navegação é local e controlada por estado, não por roteador.
+Base recomendada já documentada em [docs/partner-crm-architecture.md](/Users/kauanbatista/Resolva Seu Negócio/docs/partner-crm-architecture.md): `Supabase`
 
-Isso significa:
+Prioridades:
 
-- não existem URLs por página
-- não existe deep-link real
-- a tela atual depende do estado da aplicação
+- autenticação real para parceiros
+- Postgres gerenciado
+- isolamento por instância com RLS
+- persistência de leads, diagnósticos e usuários
 
-Se futuramente o produto crescer, a migração natural é para `react-router`.
+### Fase 3. Operação comercial mínima
 
-### Dados
+- gravar o lead ao concluir contato
+- vincular lead ao diagnóstico gerado
+- criar status comercial persistido
+- permitir notas internas e histórico de atendimento
+- distribuir leads por parceiro/consultor
 
-Não existe camada de API.
+### Fase 4. Agenda e integração
 
-Se um backend entrar, os pontos naturais de integração serão:
+- persistir disponibilidade do parceiro
+- criar slots reais de agenda
+- confirmar reuniões
+- integrar com Google Calendar
+- integrar com CRM/WhatsApp conforme canal definido
 
-- envio do lead do quiz
-- catálogo de especialistas
-- catálogo de soluções do `explore`
-- tracking de recomendação clicada
+### Fase 5. Otimização do matching
 
-## Riscos técnicos atuais
+- revisar a heurística atual
+- adicionar scoring por resposta
+- registrar conversão por recomendação
+- medir aderência entre diagnóstico, contato e fechamento
 
-### 1. Arquivo único grande
+## Arquitetura futura sugerida
 
-`App.tsx` concentra muita responsabilidade.
+Extração natural do estado atual:
 
-Risco:
+- `src/features/landing`
+- `src/features/quiz`
+- `src/features/result`
+- `src/features/explore`
+- `src/features/consultant`
+- `src/data`
+- `src/lib/diagnosis`
+- `src/types`
 
-- manutenção mais lenta
-- conflito de edição mais frequente
-- regressão visual ao alterar partes não relacionadas
+## Banco e modelagem já iniciados
 
-### 2. Regras de matching frágeis
+Existe base inicial em [database/schema.sql](/Users/kauanbatista/Resolva Seu Negócio/database/schema.sql), indicando intenção de evolução para:
 
-A inferência depende de condicionais simples e `includes()`.
+- parceiros e instâncias
+- usuários com papéis como `owner`, `manager`, `sdr`, `consultant`
+- leads e diagnósticos
+- agenda e operação comercial
 
-Risco:
+O frontend ainda não consome esse schema.
 
-- baixa precisão em casos ambíguos
-- pouca explicabilidade estruturada
+## Resumo objetivo
 
-### 3. Sem persistência
+Hoje o Resolva Seu Negócio já é um MVP navegável com:
 
-Hoje nenhum lead é salvo.
+- landing comercial
+- quiz novo de 6 etapas
+- recomendação heurística
+- vitrine de soluções
+- modal de captura para contato
+- área do parceiro prototipada no frontend
 
-Risco:
-
-- todo o valor do diagnóstico é apenas demonstrativo
-
-### 4. Sem roteamento real
-
-Boa para MVP, ruim para compartilhamento e escala.
-
-## Próximos refactors naturais
-
-Ordem recomendada:
-
-1. extrair catálogos estáticos para `src/data/`
-2. extrair blocos da landing em `src/components/`
-3. extrair regra de diagnóstico para `src/lib/diagnosis.ts`
-4. extrair `Explore` para um módulo próprio
-5. adicionar persistência do lead
-6. integrar contato real com especialista
-
-## Próximas integrações de produto
-
-As integrações de maior impacto seriam:
-
-- backend para persistir leads
-- webhook/CRM
-- WhatsApp por especialista
-- analytics por etapa
-- tracking de clique nas recomendações
-
-## Como rodar
-
-### Desenvolvimento
-
-```bash
-npm install
-npm run dev
-```
-
-### Build
-
-```bash
-npm run build
-```
-
-### Preview local do build
-
-```bash
-npm run preview
-```
-
-## Resumo executivo para quem acabou de chegar
-
-Se você for mexer no projeto pela primeira vez, o mínimo que precisa saber é:
-
-1. o app é um MVP frontend-only, monolítico, em React
-2. tudo importante está em [src/App.tsx](/Users/kauanbatista/Resolva Seu Negócio/src/App.tsx) e [src/styles.css](/Users/kauanbatista/Resolva Seu Negócio/src/styles.css)
-3. a jornada principal é `landing -> quiz -> loading -> explore -> result`
-4. o `explore` também funciona isoladamente como vitrine
-5. categorias internas usam strings ASCII; labels visíveis usam acento
-6. qualquer ajuste visual precisa ser revisado em desktop e mobile
-7. qualquer ajuste de copy deve preservar o tom comercial, direto e em português brasileiro
-
-## Guia curto para futuras IAs
-
-Antes de alterar qualquer coisa:
-
-1. identifique se a mudança é de conteúdo, regra ou layout
-2. verifique se o texto é display ou chave interna
-3. teste a jornada completa
-4. rode build
-5. valide responsividade nas seções críticas
-
-Ao editar:
-
-- prefira mudanças incrementais
-- evite “refatorar tudo” sem pedido explícito
-- não substitua identidade da marca por estética genérica
-- preserve a lógica de personalização do `explore` após o quiz
-
+O próximo salto técnico não é adicionar mais tela. É transformar a recomendação e a área do parceiro em fluxo persistido, autenticado e operacional.
