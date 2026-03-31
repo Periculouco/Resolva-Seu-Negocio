@@ -23,24 +23,20 @@ import {
   revenueProfileOptions,
   solutionExperienceOptions,
 } from "./data/quizOptions";
+import {
+  buildDiagnosis,
+  buildResultRecommendations,
+  getPreferredExploreCategory,
+  inferArea,
+} from "./lib/diagnosis";
 import type {
-  Area,
-  BusinessMoment,
   ConsultantAgendaItem,
   ConsultantLead,
   ConsultantSection,
   ContactTarget,
-  CurrentBottleneck,
-  DecisionMaking,
-  ExploreItem,
   FormData,
-  NumberItem,
-  PrimaryGoal,
-  RevenueProfile,
   Screen,
   SignalItem,
-  SolutionExperience,
-  Specialist,
 } from "./types/domain";
 
 
@@ -192,140 +188,22 @@ function App() {
 
   const normalizedChallenge = formData.challenge.toLowerCase();
 
-  const inferredArea = useMemo<Area>(() => {
-    if (
-      normalizedChallenge.includes("caixa") ||
-      normalizedChallenge.includes("finance") ||
-      normalizedChallenge.includes("margem") ||
-      normalizedChallenge.includes("precifica")
-    ) {
-      return "financeiro";
-    }
-
-    if (
-      normalizedChallenge.includes("marketing") ||
-      normalizedChallenge.includes("lead") ||
-      normalizedChallenge.includes("demanda") ||
-      normalizedChallenge.includes("tráfego") ||
-      normalizedChallenge.includes("trafego") ||
-      normalizedChallenge.includes("posicionamento")
-    ) {
-      return "marketing";
-    }
-
-    if (
-      normalizedChallenge.includes("venda") ||
-      normalizedChallenge.includes("comercial") ||
-      normalizedChallenge.includes("cliente") ||
-      normalizedChallenge.includes("pipeline") ||
-      formData.primaryGoal === "aumentar_previsibilidade"
-    ) {
-      return "vendas";
-    }
-
-    if (
-      formData.primaryGoal === "sair_caos" ||
-      formData.primaryGoal === "controle_operacao" ||
-      formData.primaryGoal === "escalar_sustentavel" ||
-      formData.currentBottleneck === "varios_sem_ordem" ||
-      formData.currentBottleneck === "falhas_sem_identificar"
-    ) {
-      return "gestao";
-    }
-
-    if (
-      formData.primaryGoal === "otimizar_existente" &&
-      (formData.revenueProfile === "300k_1m" || formData.revenueProfile === "acima_1m")
-    ) {
-      return "gestao";
-    }
-
-    return "outros";
-  }, [formData.currentBottleneck, formData.primaryGoal, formData.revenueProfile, normalizedChallenge]);
+  const inferredArea = useMemo(
+    () => inferArea(formData),
+    [formData],
+  );
 
   const specialist = specialists[inferredArea];
 
-  const diagnosis = useMemo(() => {
-    if (
-      formData.currentBottleneck === "varios_sem_ordem" ||
-      formData.currentBottleneck === "falhas_sem_identificar"
-    ) {
-      return {
-        title: "Falta de clareza sobre prioridade de crescimento",
-        summary:
-          "Seu negócio já sente o peso de vários gargalos ao mesmo tempo, mas ainda sem uma leitura clara do que precisa ser atacado primeiro.",
-      };
-    }
-
-    if (
-      inferredArea === "vendas" &&
-      (formData.primaryGoal === "aumentar_previsibilidade" ||
-        formData.currentBottleneck === "problema_sem_solucao" ||
-        formData.currentBottleneck === "solucoes_sem_resultado")
-    ) {
-      return {
-        title: "Falta de previsibilidade comercial",
-        summary:
-          "Hoje a empresa até gera movimento comercial, mas ainda sem processo consistente o suficiente para transformar esforço em receita previsível.",
-      };
-    }
-
-    if (
-      inferredArea === "marketing" &&
-      (formData.currentBottleneck === "problema_sem_solucao" ||
-        formData.solutionExperience === "sem_consistencia" ||
-        formData.solutionExperience === "sem_criterio")
-    ) {
-      return {
-        title: "Aquisição sem previsibilidade",
-        summary:
-          "Existe tentativa de gerar demanda, mas ainda sem uma estrutura clara para saber o que realmente traz clientes e o que só consome energia.",
-      };
-    }
-
-    if (
-      inferredArea === "financeiro" ||
-      (formData.primaryGoal === "controle_operacao" &&
-        (normalizedChallenge.includes("caixa") || normalizedChallenge.includes("margem")))
-    ) {
-      return {
-        title: "Falta de clareza financeira para crescer com segurança",
-        summary:
-          "A operação pode até estar rodando, mas decisões importantes ainda acontecem sem visibilidade suficiente de caixa, margem e impacto real no negócio.",
-      };
-    }
-
-    if (
-      formData.businessMoment === "crescendo_sem_prioridade" ||
-      formData.businessMoment === "escalando_com_seguranca" ||
-      formData.primaryGoal === "escalar_sustentavel" ||
-      formData.primaryGoal === "otimizar_existente"
-    ) {
-      return {
-        title: "Gargalos operacionais travando a escala",
-        summary:
-          "Sua empresa já passou da fase inicial, mas o crescimento está esbarrando em execução, priorização e estrutura para sustentar a próxima etapa.",
-      };
-    }
-
-    if (
-      formData.decisionMaking === "urgencia" ||
-      formData.decisionMaking === "tentativa_erro" ||
-      formData.solutionExperience === "interno"
-    ) {
-      return {
-        title: "Negócio sem direção operacional clara",
-        summary:
-          "As decisões ainda acontecem muito no impulso ou na tentativa e erro, o que dilui energia e atrasa a construção de um caminho mais consistente.",
-      };
-    }
-
-    return {
-      title: "Hora de alinhar estratégia, parceiro e execução",
-      summary:
-        "Seu cenário mostra maturidade suficiente para buscar soluções mais aderentes, com menos improviso e mais direção sobre o que realmente acelera o negócio.",
-    };
-  }, [formData, inferredArea, normalizedChallenge]);
+  const diagnosis = useMemo(
+    () =>
+      buildDiagnosis({
+        ...formData,
+        inferredArea,
+        normalizedChallenge,
+      }),
+    [formData, inferredArea, normalizedChallenge],
+  );
 
   const startDiagnosis = (challenge?: string) => {
     setFormData((previous) => ({
@@ -398,44 +276,17 @@ function App() {
     Boolean(formData.primaryGoal),
   ][currentStep];
 
-  const preferredExploreCategory =
-    inferredArea === "vendas"
-      ? "Vendas"
-      : inferredArea === "marketing"
-        ? "Marketing & Growth"
-        : inferredArea === "gestao"
-          ? "Gestao & Estrategia"
-          : inferredArea === "financeiro"
-            ? "Financas"
-            : "Todos";
+  const preferredExploreCategory = useMemo(() => getPreferredExploreCategory(inferredArea), [inferredArea]);
 
-  const resultRecommendations = useMemo(() => {
-    const primaryCategory = preferredExploreCategory === "Todos" ? "Gestao & Estrategia" : preferredExploreCategory;
-    const exactSpecialistMatch = exploreItems.find((item) => item.name === specialist.name);
-
-    const primaryItem: ExploreItem =
-      exactSpecialistMatch ??
-      {
-        id: `diag-${specialist.id}`,
-        name: specialist.name,
-        kind: "Consultor",
-        category: primaryCategory,
-        focus: specialist.focus,
-        audience: "Empresas com cenário parecido com o seu diagnóstico",
-        description: specialist.description,
-        badge: "Recomendação principal",
-      };
-
-    const secondaryItems = exploreItems
-      .filter((item) => item.id !== primaryItem.id)
-      .filter((item) => item.category === primaryCategory || item.kind === "Parceiro")
-      .slice(0, 2);
-
-    return {
-      primary: primaryItem,
-      secondary: secondaryItems,
-    };
-  }, [preferredExploreCategory, specialist]);
+  const resultRecommendations = useMemo(
+    () =>
+      buildResultRecommendations({
+        exploreItems,
+        preferredExploreCategory,
+        specialist,
+      }),
+    [preferredExploreCategory, specialist],
+  );
 
   const filteredExploreItems = useMemo(() => {
     return exploreItems.filter((item) => {
