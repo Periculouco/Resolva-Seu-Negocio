@@ -29,6 +29,8 @@ import {
   getPreferredExploreCategory,
   inferArea,
 } from "./lib/diagnosis";
+import { findOptionLabel, formatCategoryLabel, toStatusClassName } from "./lib/formatters";
+import { LandingScreen } from "./features/landing/LandingScreen";
 import type {
   ConsultantAgendaItem,
   ConsultantLead,
@@ -38,11 +40,6 @@ import type {
   Screen,
   SignalItem,
 } from "./types/domain";
-
-
-function findOptionLabel<T extends string>(options: Array<{ value: T; label: string }>, value: T | "") {
-  return options.find((option) => option.value === value)?.label ?? "";
-}
 
 function AnimatedSignalList({ items }: { items: SignalItem[] }) {
   const loopItems = [...items, ...items];
@@ -143,30 +140,6 @@ function AnimatedNumber({
     </span>
   );
 }
-
-function formatCategoryLabel(label: string) {
-  const categoryMap: Record<string, string> = {
-    "Gestao & Estrategia": "Gestão & Estratégia",
-    Financas: "Finanças",
-    Operacoes: "Operações",
-    Tecnologia: "Tecnologia",
-    Vendas: "Vendas",
-    "Marketing & Growth": "Marketing & Growth",
-    "Pessoas & Cultura": "Pessoas & Cultura",
-    Todos: "Todos",
-  };
-
-  return categoryMap[label] ?? label;
-}
-
-function toStatusClassName(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, "-");
-}
-
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -474,255 +447,25 @@ function App() {
       </header>
 
       {screen === "landing" && (
-        <main className="landing-light">
-          <section className="search-hero">
-            <div className="search-hero-pattern" />
-            <div className="search-hero-glow" />
-            <div className="search-hero-content">
-              <p className="section-kicker centered">Resolva seu negócio</p>
-              <h1>
-                Conectamos você
-                <br />
-                à solução <span className="accent-word">exata</span>
-                <br />
-                para o seu
-                <br />
-                negócio
-              </h1>
-              <p className="hero-support">
-                Entenda o que trava seu negócio e com quem resolver isso primeiro.
-              </p>
-
-              <form className="search-box" onSubmit={submitChallenge}>
-                <input
-                  id="challenge"
-                  value={formData.challenge}
-                  onChange={(event) => updateField("challenge", event.target.value)}
-                  placeholder="Ex: minha empresa vende, mas tudo depende de indicação"
-                />
-                <button className="search-button" type="submit">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="7" />
-                    <path d="m20 20-3.5-3.5" />
-                  </svg>
-                  Buscar solução
-                </button>
-              </form>
-
-              <div className="popular-row">
-                <span>Populares:</span>
-                {quickChallenges.map((challenge) => (
-                  <button
-                    className="light-tag"
-                    key={challenge}
-                    type="button"
-                    onClick={() => startDiagnosis(challenge)}
-                  >
-                    {challenge}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="logo-strip" aria-label="Frentes que mais travam empresas">
-            <div className="logo-marquee">
-              {[0, 1].map((track) => (
-                <div className="logo-marquee-track" key={track}>
-                  <span>frentes que mais travam empresas</span>
-                  {ecosystemLogos.map((logo) => (
-                    <strong key={`${track}-${logo}`}>{logo}</strong>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="light-section" id="como-funciona">
-            <div className="section-heading">
-              <p className="section-kicker">Como resolvemos</p>
-              <h2>
-                Você mostra a dor. A plataforma mostra o que fazer <span className="accent-word-inline">primeiro</span>.
-              </h2>
-            </div>
-
-            <div className="process-grid">
-              {howItWorks.map((item, index) => (
-                <article className="process-card" key={item.title}>
-                  <div className="process-illustration">{index + 1}</div>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="light-section" id="numeros">
-            <div className="numbers-showcase">
-              <div className="numbers-main">
-                <div className="section-heading">
-                  <p className="section-kicker">O tamanho do problema</p>
-                  <h2>O que é Resolva Seu Negócio em números:</h2>
-                </div>
-
-                <div className="numbers-grid">
-                  {numbers.map((item) => (
-                    <article className="number-card" key={`${item.prefix ?? ""}${item.value}${item.suffix ?? ""}`}>
-                      <strong>
-                        <AnimatedNumber value={item.value} prefix={item.prefix} suffix={item.suffix} />
-                      </strong>
-                      <p>{item.label}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-
-              <aside className="numbers-feed">
-                <div className="numbers-feed-copy">
-                  <p className="section-kicker">Principais dores</p>
-                  <h3>Todos os dias empresários nos reportam:</h3>
-                </div>
-                <AnimatedSignalList items={diagnosisSignals} />
-              </aside>
-            </div>
-          </section>
-
-          <section className="light-section" id="parceiros">
-            <div className="section-heading">
-              <p className="section-kicker">Quem resolve</p>
-              <h2>
-                Especialistas preparados para atacar <span className="accent-word-inline">dores reais</span> do negócio
-              </h2>
-              <p className="section-subtitle">
-                Consultores e parceiros para vendas, marketing, gestão e finanças.
-              </p>
-            </div>
-
-            <div className="partners-grid">
-              {featuredPartners.map((partner) => (
-                <article className="partner-card" key={partner.name}>
-                  <div className="partner-badge">{partner.name.slice(0, 1)}</div>
-                  <div className="partner-copy">
-                    <h3>{partner.name}</h3>
-                    <p className="partner-category">{partner.category}</p>
-                    <span>{partner.benefit}</span>
-                  </div>
-                  <button
-                    className="partner-link"
-                    type="button"
-                    onClick={() => startDiagnosis(partner.category)}
-                  >
-                    Ver mais
-                  </button>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="light-section" id="categorias">
-            <div className="section-heading centered-heading">
-              <p className="section-kicker">Por onde sua empresa está travando</p>
-              <h2>Explore por categoria</h2>
-              <p className="section-subtitle narrow">
-                Escolha a frente que mais pesa hoje. Se não souber, o diagnóstico encontra.
-              </p>
-            </div>
-
-            <div className="category-grid">
-              {categories.map((category) => (
-                <button
-                  className={category.accent ? "category-card accent category-card-button" : "category-card category-card-button"}
-                  key={category.title}
-                  type="button"
-                  onClick={() => openExploreCategory(category.exploreCategory)}
-                >
-                  <div className="category-icon">{category.title.slice(0, 1)}</div>
-                  <h3>{category.title}</h3>
-                  <p>{category.description}</p>
-                  <div className="category-meta">
-                    <span className="category-count">
-                      +{exploreItems.filter((item) => item.category === category.exploreCategory).length}
-                    </span>
-                    <span className="category-signal">{category.signal}</span>
-                  </div>
-                  <span className="category-link">
-                    Explorar categoria
-                  </span>
-                  <div className="category-footer-indicator" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="light-section">
-            <div className="section-heading centered-heading">
-              <p className="section-kicker">Antes e depois</p>
-              <h2>Da dor recorrente ao resultado certo.</h2>
-              <p className="section-subtitle narrow">
-                O diagnóstico mostra o que trava. A direção certa mostra o que começa a andar.
-              </p>
-            </div>
-
-            <div className="before-after-grid">
-              <article className="comparison-card">
-                <div className="numbers-feed-copy">
-                  <p className="section-kicker">Antes do diagnóstico</p>
-                  <h3>O que os empresários reportam quando chegam.</h3>
-                </div>
-                <AnimatedSignalList items={diagnosisSignals} />
-              </article>
-
-              <article className="comparison-card success">
-                <div className="numbers-feed-copy">
-                  <p className="section-kicker">Depois da direção certa</p>
-                  <h3>O que eles começam a relatar após agir com clareza.</h3>
-                </div>
-                <AnimatedSignalList items={successSignals} />
-              </article>
-            </div>
-          </section>
-
-          <section className="light-section cta-section">
-            <div className="cta-copy">
-              <p className="section-kicker">Pare de correr atrás do próprio rabo</p>
-              <h2>
-                Seu negócio não precisa de mais tentativa e erro. Precisa de <span className="accent-word-inline">direção</span>.
-              </h2>
-              <p className="section-subtitle">
-                Comece pelo diagnóstico e entenda qual gargalo atacar agora.
-              </p>
-              <button className="dark-button" type="button" onClick={() => startDiagnosis()}>
-                Fazer diagnóstico agora
-              </button>
-            </div>
-
-            <aside className="partner-cta-card">
-              <p className="section-kicker">Seja parceiro</p>
-              <h3>Você resolve dores empresariais de verdade?</h3>
-              <p>
-                Se sua especialidade destrava crescimento, faz sentido conversar com a gente.
-              </p>
-              <button className="gold-button" type="button">
-                Quero entrar na rede
-              </button>
-              <button className="ghost-button partner-secondary-cta" type="button" onClick={openConsultantArea}>
-                Ver área do parceiro
-              </button>
-            </aside>
-          </section>
-        </main>
+        <LandingScreen
+          challenge={formData.challenge}
+          quickChallenges={quickChallenges}
+          ecosystemLogos={ecosystemLogos}
+          numbers={numbers}
+          diagnosisSignals={diagnosisSignals}
+          successSignals={successSignals}
+          featuredPartners={featuredPartners}
+          categories={categories}
+          howItWorks={howItWorks}
+          exploreItems={exploreItems}
+          onChallengeChange={(event) => updateField("challenge", event.target.value)}
+          onSubmitChallenge={submitChallenge}
+          onStartDiagnosis={startDiagnosis}
+          onOpenExploreCategory={openExploreCategory}
+          onOpenConsultantArea={openConsultantArea}
+          AnimatedSignalList={AnimatedSignalList}
+          AnimatedNumber={AnimatedNumber}
+        />
       )}
 
       {screen === "explore" && (

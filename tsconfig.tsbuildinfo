@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/data/catalogs.ts","./src/data/quizoptions.ts","./src/features/landing/landingscreen.tsx","./src/lib/diagnosis.ts","./src/lib/formatters.ts","./src/types/domain.ts"],"version":"5.9.3"}
