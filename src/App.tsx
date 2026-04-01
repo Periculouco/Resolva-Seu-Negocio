@@ -3,6 +3,8 @@ import type { Session } from "@supabase/supabase-js";
 
 import {
   categories,
+  consultantAgenda as consultantAgendaMock,
+  consultantLeads as consultantLeadsMock,
   diagnosisSignals,
   ecosystemLogos,
   exploreCategories,
@@ -479,7 +481,11 @@ function App() {
         setConsultantLeads([]);
         setConsultantLeadsLoading(false);
       } else {
-        setConsultantLeads(leadsResult.data.map(mapLeadRowToConsultantLead));
+        setConsultantLeads(
+          leadsResult.data.length > 0
+            ? leadsResult.data.map(mapLeadRowToConsultantLead)
+            : consultantLeadsMock,
+        );
         setConsultantLeadsLoading(false);
       }
 
@@ -487,7 +493,11 @@ function App() {
         setConsultantAgenda([]);
         setConsultantAgendaLoading(false);
       } else {
-        setConsultantAgenda(agendaResult.data.map(mapAgendaRowToConsultantAgendaItem));
+        setConsultantAgenda(
+          agendaResult.data.length > 0
+            ? agendaResult.data.map(mapAgendaRowToConsultantAgendaItem)
+            : consultantAgendaMock,
+        );
         setConsultantAgendaLoading(false);
       }
     });
@@ -522,6 +532,10 @@ function App() {
       return;
     }
 
+    const revenueProfileLabel = findOptionLabel(revenueProfileOptions, formData.revenueProfile);
+    const businessMomentLabel = findOptionLabel(businessMomentOptions, formData.businessMoment);
+    const decisionMakingLabel = findOptionLabel(decisionMakingOptions, formData.decisionMaking);
+    const solutionExperienceLabel = findOptionLabel(solutionExperienceOptions, formData.solutionExperience);
     const primaryGoalLabel = findOptionLabel(primaryGoalOptions, formData.primaryGoal);
     const currentBottleneckLabel = findOptionLabel(currentBottleneckOptions, formData.currentBottleneck);
     const leadResult = await createLead({
@@ -532,12 +546,22 @@ function App() {
       contact_phone: formData.phone,
       contact_role: formData.role,
       challenge: formData.challenge,
+      revenue_profile: formData.revenueProfile || null,
+      revenue_profile_label: revenueProfileLabel || null,
+      business_moment: formData.businessMoment || null,
+      business_moment_label: businessMomentLabel || null,
+      decision_making: formData.decisionMaking || null,
+      decision_making_label: decisionMakingLabel || null,
       main_pain: formData.mainPain,
+      current_bottleneck: formData.currentBottleneck || null,
       diagnosis_title: diagnosis.title,
       diagnosis_summary: diagnosis.summary,
       inferred_area: inferredArea,
       recommended_category: resultRecommendations.primary.category,
       recommended_specialist_name: specialist.name,
+      solution_experience: formData.solutionExperience || null,
+      solution_experience_label: solutionExperienceLabel || null,
+      primary_goal: formData.primaryGoal || null,
       primary_goal_label: primaryGoalLabel || null,
       current_bottleneck_label: currentBottleneckLabel || null,
       source_screen: "result_modal",
