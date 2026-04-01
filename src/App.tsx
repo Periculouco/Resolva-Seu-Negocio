@@ -616,7 +616,7 @@ function App() {
     const result = await signInPartner(consultantForm.email, consultantForm.password);
 
     if (!result.success) {
-      setConsultantAuthError("Não foi possível entrar agora. Verifique seu email e senha e tente novamente.");
+      setConsultantAuthError(result.error);
       return;
     }
 
