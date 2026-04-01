@@ -706,6 +706,13 @@ button {
   letter-spacing: -0.05em;
 }
 
+.result-card h1 {
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  line-height: 0.96;
+  margin-bottom: 18px;
+  max-width: 8.8ch;
+}
+
 .accent-word,
 .accent-word-inline {
   color: #ff7a1a;
@@ -1707,12 +1714,34 @@ button {
 
 .result-recommendation-primary::before {
   content: "Recomendação principal para o seu cenário";
+  top: 20px;
+  left: 28px;
+  right: auto;
+}
+
+.result-recommendation-primary {
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1.2fr) minmax(190px, 240px);
+  padding-top: 74px;
+}
+
+.result-recommendation-primary .explore-result-brand {
+  padding-right: 12px;
+}
+
+.result-recommendation-primary .explore-result-about {
+  max-width: 44ch;
 }
 
 .result-recommendation-primary .explore-result-action-stack {
   display: grid;
   gap: 12px;
   align-content: end;
+  justify-items: stretch;
+}
+
+.result-recommendation-primary .primary-button,
+.result-recommendation-primary .whatsapp-button {
+  width: 100%;
 }
 
 .result-cta-hint {
@@ -1724,6 +1753,7 @@ button {
   color: var(--ink-muted);
   font-size: 0.94rem;
   line-height: 1.5;
+  text-align: left;
 }
 
 .result-secondary-block {
@@ -2250,6 +2280,10 @@ button {
     min-height: 460px;
   }
 
+  .result-recommendation-primary {
+    padding-top: 84px;
+  }
+
   .consultant-stats-grid,
   .consultant-table-header,
   .consultant-table-row {
@@ -2333,6 +2367,11 @@ button {
 
   .loading-card {
     padding: 34px 24px;
+  }
+
+  .result-card h1 {
+    font-size: clamp(2.3rem, 10vw, 3.6rem);
+    max-width: 100%;
   }
 
   .consultant-stats-grid,
