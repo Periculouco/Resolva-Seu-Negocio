@@ -54,11 +54,15 @@ export function ConsultorScreen({
   onConsultantInstanceChange,
 }: ConsultorScreenProps) {
   const [selectedLead, setSelectedLead] = useState<ConsultantLead | null>(null);
+  const [consultantTheme, setConsultantTheme] = useState<"light" | "dark">("light");
   const nextMeeting = consultantAgenda[0] ?? null;
   const openPipelineCount = consultantLeads.filter((lead) => lead.status !== "Perdido").length;
   const qualifiedCount = consultantLeads.filter(
     (lead) => lead.status === "Qualificado" || lead.status === "Reunião marcada",
   ).length;
+  const lostCount = consultantLeads.filter((lead) => lead.status === "Perdido").length;
+  const activeLead = consultantLeads.find((lead) => lead.status !== "Perdido") ?? consultantLeads[0] ?? null;
+  const agendaPreview = consultantAgenda.slice(0, 3);
 
   const getLeadPriority = (lead: ConsultantLead) => {
     const urgency = lead.urgency.toLowerCase();
@@ -105,10 +109,11 @@ export function ConsultorScreen({
     label: string;
     helper: string;
   }> = [
-    { id: "Novo", label: "Qualificados", helper: "Leads recém-chegados do diagnóstico" },
-    { id: "Em contato", label: "Contato feito", helper: "Leads em abordagem comercial" },
-    { id: "Qualificado", label: "Demo agendada", helper: "Já existe aderência e próxima ação" },
-    { id: "Reunião marcada", label: "Proposta feita", helper: "Leads em reta final de conversão" },
+    { id: "Novo", label: "Novo lead", helper: "Entradas do diagnóstico" },
+    { id: "Em contato", label: "Contato iniciado", helper: "Primeiro follow-up em andamento" },
+    { id: "Qualificado", label: "Em negociação", helper: "Lead com aderência e avanço" },
+    { id: "Reunião marcada", label: "Fechado", helper: "Call ou fechamento confirmado" },
+    { id: "Perdido", label: "Perdido", helper: "Leads fora da janela atual" },
   ];
 
   const stopLeadModalPropagation: MouseEventHandler<HTMLElement> = (event) => {
@@ -186,7 +191,13 @@ export function ConsultorScreen({
           </section>
         </section>
       ) : (
-        <section className="consultant-dashboard">
+        <section
+          className={
+            consultantTheme === "dark"
+              ? "consultant-dashboard consultant-theme-dark"
+              : "consultant-dashboard consultant-theme-light"
+          }
+        >
           <aside className="consultant-sidebar">
             <div className="consultant-sidebar-brand">
               <img src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
@@ -239,36 +250,50 @@ export function ConsultorScreen({
           </aside>
 
           <div className="consultant-main">
-            <div className="consultant-header">
-              <div>
+            <div className="consultant-app-bar">
+              <div className="consultant-app-bar-copy">
                 <p className="section-kicker">Pipeline do parceiro</p>
-                <h1>
+                <strong>
                   {consultantSection === "dashboard"
                     ? "Dashboard comercial"
                     : consultantSection === "leads"
-                      ? "Pipeline de leads"
+                      ? "Kanban de leads"
                       : consultantSection === "agenda"
                         ? "Agenda comercial"
-                        : "Configurações do parceiro"}
-                </h1>
-                <p>
-                  {consultantSection === "dashboard"
-                    ? "Visão rápida do funil, da agenda e das próximas ações."
-                    : consultantSection === "leads"
-                      ? "Abra os cards para ver contexto, quiz e informações de abordagem."
-                      : consultantSection === "agenda"
-                        ? "Controle reuniões, disponibilidade e próximos slots."
-                        : "Ajuste informações públicas e base operacional do parceiro."}
-                </p>
+                        : "Perfil do parceiro"}
+                </strong>
               </div>
-              <div className="consultant-header-actions">
-                <div className="consultant-header-badge">
+              <div className="consultant-app-bar-meta">
+                <div className="consultant-app-bar-pill">
                   <span>Pipeline ativo</span>
                   <strong>{openPipelineCount.toString().padStart(2, "0")}</strong>
                 </div>
                 <button className="ghost-button" type="button" onClick={onConsultantLogout}>
                   Sair da instância
                 </button>
+              </div>
+            </div>
+
+            <div className="consultant-header">
+              <div>
+                <h1>
+                  {consultantSection === "dashboard"
+                    ? "Dashboard comercial"
+                    : consultantSection === "leads"
+                      ? "Gerenciar leads"
+                      : consultantSection === "agenda"
+                        ? "Agenda e disponibilidade"
+                        : "Perfil operacional"}
+                </h1>
+                <p>
+                  {consultantSection === "dashboard"
+                    ? "Visão rápida do funil, da agenda e das próximas ações."
+                    : consultantSection === "leads"
+                      ? "Board por etapa com contexto do diagnóstico e prioridade comercial."
+                      : consultantSection === "agenda"
+                        ? "Próximos slots, reuniões e base de atendimento."
+                        : "Dados exibidos ao lead e estrutura interna do parceiro."}
+                </p>
               </div>
             </div>
 
@@ -290,18 +315,18 @@ export function ConsultorScreen({
                       <strong>{stat.value}</strong>
                       <small>
                         {stat.label === "Leads recebidos"
-                          ? "Entrada total vinda da recomendação e do modal"
+                          ? "Entrada do funil"
                           : stat.label === "Em contato"
-                            ? "Leads já em abordagem ou follow-up ativo"
+                            ? "Follow-up ativo"
                             : stat.label === "Reuniões marcadas"
-                              ? "Conversas que já avançaram para conversa comercial"
-                              : "Leads que já chegaram com aderência suficiente"}
+                              ? "Call comercial confirmada"
+                              : "Leads com aderência"}
                       </small>
                     </article>
                   ))}
                 </div>
 
-                <div className="consultant-panels">
+                <div className="consultant-dashboard-grid">
                   <section className="consultant-panel">
                     <div className="consultant-panel-header">
                       <h2>Pipeline comercial</h2>
@@ -343,9 +368,7 @@ export function ConsultorScreen({
                                           {getLeadPriority(lead)}
                                         </span>
                                       </div>
-                                      <span>
-                                        {lead.contact} · {lead.role}
-                                      </span>
+                                      <span>{lead.contact}</span>
                                       <p>{lead.diagnosis}</p>
                                       <small>{lead.objective}</small>
                                     </button>
@@ -358,30 +381,66 @@ export function ConsultorScreen({
                     </div>
                   </section>
 
-                  <section className="consultant-panel">
+                  <section className="consultant-panel consultant-dashboard-side">
                     <div className="consultant-panel-header">
-                      <h2>Agenda e próximos slots</h2>
-                      <span>Reuniões em andamento</span>
+                      <h2>Próxima ação</h2>
+                      <span>Lead e agenda</span>
                     </div>
-                    <div className="consultant-agenda-list">
-                      {consultantAgendaLoading ? (
-                        <p className="result-cta-hint">Carregando agenda da instância...</p>
-                      ) : consultantAgenda.length === 0 ? (
-                        <p className="result-cta-hint">Nenhuma reunião agendada.</p>
+                    <div className="consultant-dashboard-side-grid">
+                      {activeLead ? (
+                        <button
+                          className="consultant-focus-card"
+                          type="button"
+                          onClick={() => setSelectedLead(activeLead)}
+                        >
+                          <div className="consultant-focus-card-header">
+                            <span className="consultant-kicker-chip">Lead em foco</span>
+                            <span className={`consultant-priority-chip ${getLeadPriorityClassName(activeLead)}`}>
+                              {getLeadPriority(activeLead)}
+                            </span>
+                          </div>
+                          <strong>{activeLead.company}</strong>
+                          <p>{activeLead.contact}</p>
+                          <small>{activeLead.diagnosis}</small>
+                        </button>
                       ) : (
-                        consultantAgenda.map((item) => (
-                          <article className="consultant-agenda-card" key={item.id}>
-                            <div>
-                              <strong>{item.title}</strong>
-                              <span>{item.company}</span>
-                            </div>
-                            <div className="consultant-agenda-meta">
-                              <small>{item.startsAt}</small>
-                              <span className={`status-pill status-${toStatusClassName(item.status)}`}>{item.status}</span>
-                            </div>
-                          </article>
-                        ))
+                        <div className="consultant-empty-card">
+                          <strong>Nenhum lead em foco</strong>
+                          <span>Assim que entrar um lead, ele aparece aqui para ação rápida.</span>
+                        </div>
                       )}
+
+                      <div className="consultant-mini-metrics">
+                        <div>
+                          <span>Qualificados</span>
+                          <strong>{qualifiedCount.toString().padStart(2, "0")}</strong>
+                        </div>
+                        <div>
+                          <span>Perdidos</span>
+                          <strong>{lostCount.toString().padStart(2, "0")}</strong>
+                        </div>
+                      </div>
+
+                      <div className="consultant-agenda-list consultant-agenda-list-compact">
+                        {consultantAgendaLoading ? (
+                          <p className="result-cta-hint">Carregando agenda da instância...</p>
+                        ) : agendaPreview.length === 0 ? (
+                          <p className="result-cta-hint">Nenhuma reunião agendada.</p>
+                        ) : (
+                          agendaPreview.map((item) => (
+                            <article className="consultant-agenda-card" key={item.id}>
+                              <div>
+                                <strong>{item.title}</strong>
+                                <span>{item.company}</span>
+                              </div>
+                              <div className="consultant-agenda-meta">
+                                <small>{item.startsAt}</small>
+                                <span className={`status-pill status-${toStatusClassName(item.status)}`}>{item.status}</span>
+                              </div>
+                            </article>
+                          ))
+                        )}
+                      </div>
                     </div>
                   </section>
                 </div>
@@ -390,8 +449,9 @@ export function ConsultorScreen({
 
             {consultantSection === "leads" && (
               <section className="consultant-data-table consultant-leads-board">
-                <div className="consultant-table-header consultant-table-header-rich">
-                  <span>Funil comercial</span>
+                <div className="consultant-panel-header">
+                  <h2>Kanban comercial</h2>
+                  <span>Abra o card para ver quiz, diagnóstico e abordagem</span>
                 </div>
                 {consultantLeadsLoading ? (
                   <p className="result-cta-hint">Carregando leads da instância...</p>
@@ -428,15 +488,19 @@ export function ConsultorScreen({
                                       {getLeadPriority(lead)}
                                     </span>
                                   </div>
-                                  <span>
-                                    {lead.contact} · {lead.role}
-                                  </span>
+                                  <div className="consultant-pipeline-card-person">
+                                    <span>{lead.contact}</span>
+                                    <small>{lead.role}</small>
+                                  </div>
                                   <p>{lead.diagnosis}</p>
                                   <div className="consultant-pipeline-card-tags">
                                     <span className="consultant-context-chip">{lead.objective}</span>
                                     <span className="consultant-context-chip">{lead.recommendedCategory}</span>
                                   </div>
-                                  <small>{lead.updatedAt}</small>
+                                  <div className="consultant-pipeline-card-footer">
+                                    <small>{lead.updatedAt}</small>
+                                    <small>{lead.phone}</small>
+                                  </div>
                                 </button>
                               ))
                           )}
@@ -481,17 +545,17 @@ export function ConsultorScreen({
                       <p className="result-cta-hint">Nenhuma reunião agendada.</p>
                     ) : (
                       consultantAgenda.map((item) => (
-                        <article className="consultant-agenda-card" key={item.id}>
-                          <div>
-                            <strong>{item.title}</strong>
-                            <span>{item.company}</span>
-                          </div>
-                          <div className="consultant-agenda-meta">
-                            <small>{item.startsAt}</small>
-                            <span>{item.owner}</span>
-                          </div>
-                        </article>
-                      ))
+                          <article className="consultant-agenda-card" key={item.id}>
+                            <div>
+                              <strong>{item.title}</strong>
+                              <span>{item.company}</span>
+                            </div>
+                            <div className="consultant-agenda-meta">
+                              <small>{item.startsAt}</small>
+                              <span className={`status-pill status-${toStatusClassName(item.status)}`}>{item.status}</span>
+                            </div>
+                          </article>
+                        ))
                     )}
                   </div>
                 </section>
@@ -527,8 +591,30 @@ export function ConsultorScreen({
 
                 <section className="consultant-panel">
                   <div className="consultant-panel-header">
-                    <h2>Base operacional</h2>
-                    <span>Estrutura atual do produto</span>
+                    <h2>Aparência e operação</h2>
+                    <span>Modo visual e stack atual</span>
+                  </div>
+                  <div className="consultant-theme-switcher">
+                    <div>
+                      <span>Modo da interface</span>
+                      <strong>{consultantTheme === "light" ? "Light padrão" : "Dark alternativo"}</strong>
+                    </div>
+                    <div className="consultant-theme-actions">
+                      <button
+                        className={consultantTheme === "light" ? "consultant-theme-button active" : "consultant-theme-button"}
+                        type="button"
+                        onClick={() => setConsultantTheme("light")}
+                      >
+                        Light
+                      </button>
+                      <button
+                        className={consultantTheme === "dark" ? "consultant-theme-button active" : "consultant-theme-button"}
+                        type="button"
+                        onClick={() => setConsultantTheme("dark")}
+                      >
+                        Dark
+                      </button>
+                    </div>
                   </div>
                   <div className="consultant-recommendation-copy">
                     <strong>Stack atual: Supabase</strong>
