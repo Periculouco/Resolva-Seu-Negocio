@@ -459,9 +459,9 @@ function App() {
 
       if (!profileResult.success || !profileResult.data?.instance_slug) {
         setPartnerProfile(profileResult.success ? profileResult.data : null);
-        setConsultantLeads([]);
+        setConsultantLeads(consultantLeadsMock);
         setConsultantLeadsLoading(false);
-        setConsultantAgenda([]);
+        setConsultantAgenda(consultantAgendaMock);
         setConsultantAgendaLoading(false);
         return;
       }
@@ -478,7 +478,7 @@ function App() {
       }
 
       if (!leadsResult.success) {
-        setConsultantLeads([]);
+        setConsultantLeads(consultantLeadsMock);
         setConsultantLeadsLoading(false);
       } else {
         setConsultantLeads(
@@ -490,7 +490,7 @@ function App() {
       }
 
       if (!agendaResult.success) {
-        setConsultantAgenda([]);
+        setConsultantAgenda(consultantAgendaMock);
         setConsultantAgendaLoading(false);
       } else {
         setConsultantAgenda(
