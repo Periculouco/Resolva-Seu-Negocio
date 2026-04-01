@@ -632,6 +632,7 @@ function App() {
 
     setConsultantAuthError(null);
     setConsultantSession(result.data);
+    setConsultantForm((previous) => ({ ...previous, password: "" }));
     setConsultantSection("dashboard");
   };
 
@@ -639,6 +640,7 @@ function App() {
     const result = await signOutPartner();
 
     if (!result.success) {
+      setConsultantAuthError("Não foi possível sair agora. Tente novamente.");
       return;
     }
 
