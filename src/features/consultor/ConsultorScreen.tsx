@@ -18,6 +18,8 @@ type ConsultorScreenProps = {
   consultantSection: ConsultantSection;
   consultantForm: ConsultantForm;
   consultantAuthError: string | null;
+  consultantInstanceSlug: string | null;
+  consultantLeadsLoading: boolean;
   consultantStats: ConsultantStat[];
   consultantLeads: ConsultantLead[];
   consultantAgenda: ConsultantAgendaItem[];
@@ -35,6 +37,8 @@ export function ConsultorScreen({
   consultantSection,
   consultantForm,
   consultantAuthError,
+  consultantInstanceSlug,
+  consultantLeadsLoading,
   consultantStats,
   consultantLeads,
   consultantAgenda,
@@ -123,7 +127,7 @@ export function ConsultorScreen({
               <img src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
               <div>
                 <strong>Instância ativa</strong>
-                <span>{consultantForm.instance || "parceiro-rsn"}</span>
+                <span>{consultantInstanceSlug || "parceiro-rsn"}</span>
               </div>
             </div>
 
@@ -147,9 +151,9 @@ export function ConsultorScreen({
 
             <div className="consultant-sidebar-card">
               <p className="section-kicker">Próxima reunião</p>
-              <strong>{consultantAgenda[0].company}</strong>
-              <span>{consultantAgenda[0].startsAt}</span>
-              <small>{consultantAgenda[0].title}</small>
+              <strong>{consultantAgenda[0]?.company || "Sem reunião confirmada"}</strong>
+              <span>{consultantAgenda[0]?.startsAt || "Agenda aguardando sincronização"}</span>
+              <small>{consultantAgenda[0]?.title || "Próximo slot será exibido aqui"}</small>
             </div>
           </aside>
 
@@ -199,22 +203,28 @@ export function ConsultorScreen({
                       <span>Entrada via diagnóstico</span>
                     </div>
                     <div className="consultant-lead-list">
-                      {consultantLeads.slice(0, 3).map((lead) => (
-                        <article className="consultant-lead-card" key={lead.id}>
-                          <div>
-                            <strong>{lead.company}</strong>
-                            <span>
-                              {lead.contact} · {lead.role}
-                            </span>
-                          </div>
-                          <div className="consultant-lead-meta">
-                            <span className={`status-pill status-${toStatusClassName(lead.status)}`}>
-                              {lead.status}
-                            </span>
-                            <small>{lead.updatedAt}</small>
-                          </div>
-                        </article>
-                      ))}
+                      {consultantLeadsLoading ? (
+                        <p className="result-cta-hint">Carregando leads da instância...</p>
+                      ) : consultantLeads.length === 0 ? (
+                        <p className="result-cta-hint">Ainda não há leads registrados para esta instância.</p>
+                      ) : (
+                        consultantLeads.slice(0, 3).map((lead) => (
+                          <article className="consultant-lead-card" key={lead.id}>
+                            <div>
+                              <strong>{lead.company}</strong>
+                              <span>
+                                {lead.contact} · {lead.role}
+                              </span>
+                            </div>
+                            <div className="consultant-lead-meta">
+                              <span className={`status-pill status-${toStatusClassName(lead.status)}`}>
+                                {lead.status}
+                              </span>
+                              <small>{lead.updatedAt}</small>
+                            </div>
+                          </article>
+                        ))
+                      )}
                     </div>
                   </section>
 
@@ -251,18 +261,24 @@ export function ConsultorScreen({
                   <span>Status</span>
                   <span>Atualização</span>
                 </div>
-                {consultantLeads.map((lead) => (
-                  <article className="consultant-table-row" key={lead.id}>
-                    <div>
-                      <strong>{lead.company}</strong>
-                      <span>{lead.contact}</span>
-                    </div>
-                    <p>{lead.diagnosis}</p>
-                    <p>{lead.objective}</p>
-                    <span className={`status-pill status-${toStatusClassName(lead.status)}`}>{lead.status}</span>
-                    <small>{lead.updatedAt}</small>
-                  </article>
-                ))}
+                {consultantLeadsLoading ? (
+                  <p className="result-cta-hint">Carregando leads da instância...</p>
+                ) : consultantLeads.length === 0 ? (
+                  <p className="result-cta-hint">Ainda não há leads registrados para esta instância.</p>
+                ) : (
+                  consultantLeads.map((lead) => (
+                    <article className="consultant-table-row" key={lead.id}>
+                      <div>
+                        <strong>{lead.company}</strong>
+                        <span>{lead.contact}</span>
+                      </div>
+                      <p>{lead.diagnosis}</p>
+                      <p>{lead.objective}</p>
+                      <span className={`status-pill status-${toStatusClassName(lead.status)}`}>{lead.status}</span>
+                      <small>{lead.updatedAt}</small>
+                    </article>
+                  ))
+                )}
               </section>
             )}
 

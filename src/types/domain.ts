@@ -51,7 +51,7 @@ export type ConsultantLead = {
   company: string;
   contact: string;
   role: string;
-  status: "Novo" | "Em contato" | "Qualificado" | "Reunião marcada";
+  status: "Novo" | "Em contato" | "Qualificado" | "Reunião marcada" | "Perdido";
   diagnosis: string;
   objective: string;
   urgency: string;

@@ -4,7 +4,6 @@ import type { Session } from "@supabase/supabase-js";
 import {
   categories,
   consultantAgenda,
-  consultantLeads,
   diagnosisSignals,
   ecosystemLogos,
   exploreCategories,
@@ -38,7 +37,8 @@ import {
   signOutPartner,
 } from "./lib/repositories/authRepository";
 import { trackEvent } from "./lib/repositories/eventsRepository";
-import { createLead } from "./lib/repositories/leadsRepository";
+import { createLead, listLeadsByInstance } from "./lib/repositories/leadsRepository";
+import { getCurrentPartnerProfile } from "./lib/repositories/partnerProfileRepository";
 import { supabase } from "./lib/supabase";
 import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
 import { ExploreScreen } from "./features/explore/ExploreScreen";
@@ -55,6 +55,7 @@ import type {
   Screen,
   SignalItem,
 } from "./types/domain";
+import type { LeadRow, PartnerProfileRow } from "./types/database";
 
 function AnimatedSignalList({ items }: { items: SignalItem[] }) {
   const loopItems = [...items, ...items];
@@ -170,10 +171,33 @@ function App() {
   const [consultantSection, setConsultantSection] = useState<ConsultantSection>("dashboard");
   const [consultantSession, setConsultantSession] = useState<Session | null>(null);
   const [consultantAuthError, setConsultantAuthError] = useState<string | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<PartnerProfileRow | null>(null);
+  const [consultantLeads, setConsultantLeads] = useState<ConsultantLead[]>([]);
+  const [consultantLeadsLoading, setConsultantLeadsLoading] = useState(false);
   const [consultantForm, setConsultantForm] = useState({
     email: "",
     password: "",
     instance: "",
+  });
+
+  const formatLeadTimestamp = (value: string) =>
+    new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+
+  const mapLeadRowToConsultantLead = (lead: LeadRow): ConsultantLead => ({
+    id: lead.id,
+    company: lead.company || "Empresa não informada",
+    contact: lead.contact_name,
+    role: lead.contact_role || "Cargo não informado",
+    status: lead.status,
+    diagnosis: lead.diagnosis_title,
+    objective: lead.primary_goal_label || "Objetivo não informado",
+    urgency: lead.main_pain || "Urgência não informada",
+    updatedAt: formatLeadTimestamp(lead.updated_at),
   });
 
   const normalizedChallenge = formData.challenge.toLowerCase();
@@ -393,6 +417,53 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!consultantSession) {
+      setPartnerProfile(null);
+      setConsultantLeads([]);
+      setConsultantLeadsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    setConsultantLeadsLoading(true);
+
+    void getCurrentPartnerProfile().then(async (profileResult) => {
+      if (!isMounted) {
+        return;
+      }
+
+      if (!profileResult.success || !profileResult.data?.instance_slug) {
+        setPartnerProfile(profileResult.success ? profileResult.data : null);
+        setConsultantLeads([]);
+        setConsultantLeadsLoading(false);
+        return;
+      }
+
+      setPartnerProfile(profileResult.data);
+
+      const leadsResult = await listLeadsByInstance(profileResult.data.instance_slug);
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (!leadsResult.success) {
+        setConsultantLeads([]);
+        setConsultantLeadsLoading(false);
+        return;
+      }
+
+      setConsultantLeads(leadsResult.data.map(mapLeadRowToConsultantLead));
+      setConsultantLeadsLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [consultantSession]);
+
   const openContactModal = (target: ContactTarget) => {
     setContactTarget(target);
     setContactRequestError(null);
@@ -545,6 +616,8 @@ function App() {
     }
 
     setConsultantSession(null);
+    setPartnerProfile(null);
+    setConsultantLeads([]);
     setConsultantAuthError(null);
   };
 
@@ -581,6 +654,7 @@ function App() {
         "Em contato": 0,
         Qualificado: 0,
         "Reunião marcada": 0,
+        Perdido: 0,
       },
     );
 
@@ -590,7 +664,7 @@ function App() {
       { label: "Reuniões marcadas", value: statusCount["Reunião marcada"].toString().padStart(2, "0") },
       { label: "Qualificados", value: statusCount.Qualificado.toString().padStart(2, "0") },
     ];
-  }, []);
+  }, [consultantLeads]);
 
   return (
     <div className="page-shell">
@@ -732,6 +806,8 @@ function App() {
           consultantSection={consultantSection}
           consultantForm={consultantForm}
           consultantAuthError={consultantAuthError}
+          consultantInstanceSlug={partnerProfile?.instance_slug ?? null}
+          consultantLeadsLoading={consultantLeadsLoading}
           consultantStats={consultantStats}
           consultantLeads={consultantLeads}
           consultantAgenda={consultantAgenda}
