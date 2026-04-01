@@ -6,6 +6,7 @@ type ContactModalProps = {
   isOpen: boolean;
   contactTarget: ContactTarget | null;
   formData: FormData;
+  errorMessage: string | null;
   onClose: () => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
   onUpdateField: <K extends keyof FormData>(key: K, value: FormData[K]) => void;
@@ -15,6 +16,7 @@ export function ContactModal({
   isOpen,
   contactTarget,
   formData,
+  errorMessage,
   onClose,
   onSubmit,
   onUpdateField,
@@ -103,6 +105,8 @@ export function ContactModal({
               Enviar contato
             </button>
           </div>
+
+          {errorMessage && <p className="result-cta-hint">{errorMessage}</p>}
         </form>
       </section>
     </div>

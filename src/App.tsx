@@ -31,6 +31,7 @@ import {
   inferArea,
 } from "./lib/diagnosis";
 import { findOptionLabel, formatCategoryLabel, toStatusClassName } from "./lib/formatters";
+import { createLead } from "./lib/repositories/leadsRepository";
 import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
 import { ExploreScreen } from "./features/explore/ExploreScreen";
 import { LandingScreen } from "./features/landing/LandingScreen";
@@ -156,6 +157,7 @@ function App() {
   const [isPersonalizedExplore, setIsPersonalizedExplore] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [contactTarget, setContactTarget] = useState<ContactTarget | null>(null);
+  const [contactRequestError, setContactRequestError] = useState<string | null>(null);
   const [hasUnlockedWhatsapp, setHasUnlockedWhatsapp] = useState(false);
   const [consultantSection, setConsultantSection] = useState<ConsultantSection>("dashboard");
   const [consultantAuthenticated, setConsultantAuthenticated] = useState(false);
@@ -334,17 +336,55 @@ function App() {
 
   const openContactModal = (target: ContactTarget) => {
     setContactTarget(target);
+    setContactRequestError(null);
     setIsContactModalOpen(true);
   };
 
   const closeContactModal = () => {
+    setContactRequestError(null);
     setIsContactModalOpen(false);
   };
 
-  const submitContactRequest = (event: FormEvent<HTMLFormElement>) => {
+  const toPartnerInstanceSlug = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  const submitContactRequest = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!contactTarget) {
+      return;
+    }
+
+    const primaryGoalLabel = findOptionLabel(primaryGoalOptions, formData.primaryGoal);
+    const currentBottleneckLabel = findOptionLabel(currentBottleneckOptions, formData.currentBottleneck);
+    const leadResult = await createLead({
+      partner_instance_slug: toPartnerInstanceSlug(contactTarget.name),
+      company: null,
+      contact_name: formData.name,
+      contact_email: formData.email,
+      contact_phone: formData.phone,
+      contact_role: formData.role,
+      challenge: formData.challenge,
+      main_pain: formData.mainPain,
+      diagnosis_title: diagnosis.title,
+      diagnosis_summary: diagnosis.summary,
+      inferred_area: inferredArea,
+      recommended_category: resultRecommendations.primary.category,
+      recommended_specialist_name: specialist.name,
+      primary_goal_label: primaryGoalLabel || null,
+      current_bottleneck_label: currentBottleneckLabel || null,
+      source_screen: "result_modal",
+      status: "Novo",
+    });
+
+    if (!leadResult.success) {
+      setContactRequestError("Não conseguimos salvar seu contato agora. Tente novamente em instantes.");
       return;
     }
 
@@ -367,6 +407,7 @@ function App() {
 
     const url = `${contactTarget.whatsapp}?text=${encodeURIComponent(message)}`;
     window.localStorage.setItem("rsn-last-whatsapp-url", url);
+    setContactRequestError(null);
     setHasUnlockedWhatsapp(true);
     setIsContactModalOpen(false);
   };
@@ -608,6 +649,7 @@ function App() {
         isOpen={isContactModalOpen}
         contactTarget={contactTarget}
         formData={formData}
+        errorMessage={contactRequestError}
         onClose={closeContactModal}
         onSubmit={submitContactRequest}
         onUpdateField={updateField}
