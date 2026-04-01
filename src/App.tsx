@@ -208,6 +208,8 @@ function App() {
     urgency: lead.main_pain || "Urgência não informada",
     recommendedCategory: lead.recommended_category || "Direção não informada",
     recommendedSpecialist: lead.recommended_specialist_name || "Especialista não informado",
+    createdAtIso: lead.created_at,
+    updatedAtIso: lead.updated_at,
     updatedAt: formatLeadTimestamp(lead.updated_at),
   });
 
@@ -717,14 +719,14 @@ function App() {
   }, [consultantLeads]);
 
   return (
-    <div className="page-shell">
-      <header className="topbar">
+    <div className={screen === "consultor" ? "page-shell consultant-page-shell" : "page-shell"}>
+      <header className={screen === "consultor" ? "topbar topbar-consultant" : "topbar"}>
         <button className="brand brand-light brand-button" type="button" onClick={goHome} aria-label="Voltar para o início">
           <img className="brand-logo brand-logo-symbol" src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
           <img className="brand-logo brand-logo-horizontal" src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
         </button>
 
-        <nav className="nav nav-light">
+        <nav className={screen === "consultor" ? "nav nav-light nav-consultant" : "nav nav-light"}>
           <button className={screen === "landing" ? "nav-link active" : "nav-link"} onClick={goHome}>
             Início
           </button>
