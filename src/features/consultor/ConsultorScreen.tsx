@@ -20,6 +20,7 @@ type ConsultorScreenProps = {
   consultantAuthError: string | null;
   consultantInstanceSlug: string | null;
   consultantLeadsLoading: boolean;
+  consultantAgendaLoading: boolean;
   consultantStats: ConsultantStat[];
   consultantLeads: ConsultantLead[];
   consultantAgenda: ConsultantAgendaItem[];
@@ -39,6 +40,7 @@ export function ConsultorScreen({
   consultantAuthError,
   consultantInstanceSlug,
   consultantLeadsLoading,
+  consultantAgendaLoading,
   consultantStats,
   consultantLeads,
   consultantAgenda,
@@ -149,12 +151,28 @@ export function ConsultorScreen({
               ))}
             </div>
 
-            <div className="consultant-sidebar-card">
-              <p className="section-kicker">Próxima reunião</p>
-              <strong>{consultantAgenda[0]?.company || "Sem reunião confirmada"}</strong>
-              <span>{consultantAgenda[0]?.startsAt || "Agenda aguardando sincronização"}</span>
-              <small>{consultantAgenda[0]?.title || "Próximo slot será exibido aqui"}</small>
-            </div>
+            {consultantAgendaLoading ? (
+              <div className="consultant-sidebar-card">
+                <p className="section-kicker">Próxima reunião</p>
+                <strong>Carregando agenda</strong>
+                <span>Buscando agenda da instância</span>
+                <small>Próximo slot será exibido aqui</small>
+              </div>
+            ) : consultantAgenda.length > 0 ? (
+              <div className="consultant-sidebar-card">
+                <p className="section-kicker">Próxima reunião</p>
+                <strong>{consultantAgenda[0].company}</strong>
+                <span>{consultantAgenda[0].startsAt}</span>
+                <small>{consultantAgenda[0].title}</small>
+              </div>
+            ) : (
+              <div className="consultant-sidebar-card">
+                <p className="section-kicker">Próxima reunião</p>
+                <strong>Nenhuma reunião agendada</strong>
+                <span>Agenda aguardando sincronização</span>
+                <small>Próximo slot será exibido aqui</small>
+              </div>
+            )}
           </aside>
 
           <div className="consultant-main">
@@ -234,18 +252,24 @@ export function ConsultorScreen({
                       <span>Próximos slots confirmados</span>
                     </div>
                     <div className="consultant-agenda-list">
-                      {consultantAgenda.map((item) => (
-                        <article className="consultant-agenda-card" key={item.id}>
-                          <div>
-                            <strong>{item.title}</strong>
-                            <span>{item.company}</span>
-                          </div>
-                          <div className="consultant-agenda-meta">
-                            <small>{item.startsAt}</small>
-                            <span className={`status-pill status-${toStatusClassName(item.status)}`}>{item.status}</span>
-                          </div>
-                        </article>
-                      ))}
+                      {consultantAgendaLoading ? (
+                        <p className="result-cta-hint">Carregando agenda da instância...</p>
+                      ) : consultantAgenda.length === 0 ? (
+                        <p className="result-cta-hint">Nenhuma reunião agendada.</p>
+                      ) : (
+                        consultantAgenda.map((item) => (
+                          <article className="consultant-agenda-card" key={item.id}>
+                            <div>
+                              <strong>{item.title}</strong>
+                              <span>{item.company}</span>
+                            </div>
+                            <div className="consultant-agenda-meta">
+                              <small>{item.startsAt}</small>
+                              <span className={`status-pill status-${toStatusClassName(item.status)}`}>{item.status}</span>
+                            </div>
+                          </article>
+                        ))
+                      )}
                     </div>
                   </section>
                 </div>
@@ -309,18 +333,24 @@ export function ConsultorScreen({
                     <span>Fluxo rápido para SDRs</span>
                   </div>
                   <div className="consultant-agenda-list">
-                    {consultantAgenda.map((item) => (
-                      <article className="consultant-agenda-card" key={item.id}>
-                        <div>
-                          <strong>{item.title}</strong>
-                          <span>{item.company}</span>
-                        </div>
-                        <div className="consultant-agenda-meta">
-                          <small>{item.startsAt}</small>
-                          <span>{item.owner}</span>
-                        </div>
-                      </article>
-                    ))}
+                    {consultantAgendaLoading ? (
+                      <p className="result-cta-hint">Carregando agenda da instância...</p>
+                    ) : consultantAgenda.length === 0 ? (
+                      <p className="result-cta-hint">Nenhuma reunião agendada.</p>
+                    ) : (
+                      consultantAgenda.map((item) => (
+                        <article className="consultant-agenda-card" key={item.id}>
+                          <div>
+                            <strong>{item.title}</strong>
+                            <span>{item.company}</span>
+                          </div>
+                          <div className="consultant-agenda-meta">
+                            <small>{item.startsAt}</small>
+                            <span>{item.owner}</span>
+                          </div>
+                        </article>
+                      ))
+                    )}
                   </div>
                 </section>
               </div>

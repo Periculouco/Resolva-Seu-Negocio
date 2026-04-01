@@ -3,7 +3,6 @@ import type { Session } from "@supabase/supabase-js";
 
 import {
   categories,
-  consultantAgenda,
   diagnosisSignals,
   ecosystemLogos,
   exploreCategories,
@@ -36,6 +35,7 @@ import {
   signInPartner,
   signOutPartner,
 } from "./lib/repositories/authRepository";
+import { listAgendaByInstance } from "./lib/repositories/agendaRepository";
 import { trackEvent } from "./lib/repositories/eventsRepository";
 import { createLead, listLeadsByInstance } from "./lib/repositories/leadsRepository";
 import { getCurrentPartnerProfile } from "./lib/repositories/partnerProfileRepository";
@@ -48,6 +48,7 @@ import { ResultScreen } from "./features/result/ResultScreen";
 import { ContactModal } from "./features/shared/ContactModal";
 
 import type {
+  ConsultantAgendaItem,
   ConsultantLead,
   ConsultantSection,
   ContactTarget,
@@ -55,7 +56,7 @@ import type {
   Screen,
   SignalItem,
 } from "./types/domain";
-import type { LeadRow, PartnerProfileRow } from "./types/database";
+import type { LeadRow, PartnerAgendaRow, PartnerProfileRow } from "./types/database";
 
 function AnimatedSignalList({ items }: { items: SignalItem[] }) {
   const loopItems = [...items, ...items];
@@ -174,6 +175,8 @@ function App() {
   const [partnerProfile, setPartnerProfile] = useState<PartnerProfileRow | null>(null);
   const [consultantLeads, setConsultantLeads] = useState<ConsultantLead[]>([]);
   const [consultantLeadsLoading, setConsultantLeadsLoading] = useState(false);
+  const [consultantAgenda, setConsultantAgenda] = useState<ConsultantAgendaItem[]>([]);
+  const [consultantAgendaLoading, setConsultantAgendaLoading] = useState(false);
   const [consultantForm, setConsultantForm] = useState({
     email: "",
     password: "",
@@ -198,6 +201,15 @@ function App() {
     objective: lead.primary_goal_label || "Objetivo não informado",
     urgency: lead.main_pain || "Urgência não informada",
     updatedAt: formatLeadTimestamp(lead.updated_at),
+  });
+
+  const mapAgendaRowToConsultantAgendaItem = (item: PartnerAgendaRow): ConsultantAgendaItem => ({
+    id: item.id,
+    title: item.title,
+    company: item.company || "Empresa não informada",
+    startsAt: formatLeadTimestamp(item.starts_at),
+    owner: item.owner_name || "Responsável não informado",
+    status: item.status === "Cancelada" ? "Pendente" : item.status,
   });
 
   const normalizedChallenge = formData.challenge.toLowerCase();
@@ -422,12 +434,15 @@ function App() {
       setPartnerProfile(null);
       setConsultantLeads([]);
       setConsultantLeadsLoading(false);
+      setConsultantAgenda([]);
+      setConsultantAgendaLoading(false);
       return;
     }
 
     let isMounted = true;
 
     setConsultantLeadsLoading(true);
+    setConsultantAgendaLoading(true);
 
     void getCurrentPartnerProfile().then(async (profileResult) => {
       if (!isMounted) {
@@ -438,12 +453,17 @@ function App() {
         setPartnerProfile(profileResult.success ? profileResult.data : null);
         setConsultantLeads([]);
         setConsultantLeadsLoading(false);
+        setConsultantAgenda([]);
+        setConsultantAgendaLoading(false);
         return;
       }
 
       setPartnerProfile(profileResult.data);
 
-      const leadsResult = await listLeadsByInstance(profileResult.data.instance_slug);
+      const [leadsResult, agendaResult] = await Promise.all([
+        listLeadsByInstance(profileResult.data.instance_slug),
+        listAgendaByInstance(profileResult.data.instance_slug),
+      ]);
 
       if (!isMounted) {
         return;
@@ -452,11 +472,18 @@ function App() {
       if (!leadsResult.success) {
         setConsultantLeads([]);
         setConsultantLeadsLoading(false);
-        return;
+      } else {
+        setConsultantLeads(leadsResult.data.map(mapLeadRowToConsultantLead));
+        setConsultantLeadsLoading(false);
       }
 
-      setConsultantLeads(leadsResult.data.map(mapLeadRowToConsultantLead));
-      setConsultantLeadsLoading(false);
+      if (!agendaResult.success) {
+        setConsultantAgenda([]);
+        setConsultantAgendaLoading(false);
+      } else {
+        setConsultantAgenda(agendaResult.data.map(mapAgendaRowToConsultantAgendaItem));
+        setConsultantAgendaLoading(false);
+      }
     });
 
     return () => {
@@ -618,6 +645,7 @@ function App() {
     setConsultantSession(null);
     setPartnerProfile(null);
     setConsultantLeads([]);
+    setConsultantAgenda([]);
     setConsultantAuthError(null);
   };
 
@@ -808,6 +836,7 @@ function App() {
           consultantAuthError={consultantAuthError}
           consultantInstanceSlug={partnerProfile?.instance_slug ?? null}
           consultantLeadsLoading={consultantLeadsLoading}
+          consultantAgendaLoading={consultantAgendaLoading}
           consultantStats={consultantStats}
           consultantLeads={consultantLeads}
           consultantAgenda={consultantAgenda}
