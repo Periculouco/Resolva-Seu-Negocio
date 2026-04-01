@@ -17,6 +17,7 @@ type ConsultorScreenProps = {
   consultantAuthenticated: boolean;
   consultantSection: ConsultantSection;
   consultantForm: ConsultantForm;
+  consultantAuthError: string | null;
   consultantStats: ConsultantStat[];
   consultantLeads: ConsultantLead[];
   consultantAgenda: ConsultantAgendaItem[];
@@ -33,6 +34,7 @@ export function ConsultorScreen({
   consultantAuthenticated,
   consultantSection,
   consultantForm,
+  consultantAuthError,
   consultantStats,
   consultantLeads,
   consultantAgenda,
@@ -110,6 +112,7 @@ export function ConsultorScreen({
               <button className="primary-button" type="submit">
                 Entrar na área do parceiro
               </button>
+              {consultantAuthError && <p className="result-cta-hint">{consultantAuthError}</p>}
             </form>
           </section>
         </section>

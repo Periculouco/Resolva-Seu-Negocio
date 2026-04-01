@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 
 import {
   categories,
@@ -31,8 +32,14 @@ import {
   inferArea,
 } from "./lib/diagnosis";
 import { findOptionLabel, formatCategoryLabel, toStatusClassName } from "./lib/formatters";
+import {
+  getCurrentSession,
+  signInPartner,
+  signOutPartner,
+} from "./lib/repositories/authRepository";
 import { trackEvent } from "./lib/repositories/eventsRepository";
 import { createLead } from "./lib/repositories/leadsRepository";
+import { supabase } from "./lib/supabase";
 import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
 import { ExploreScreen } from "./features/explore/ExploreScreen";
 import { LandingScreen } from "./features/landing/LandingScreen";
@@ -161,7 +168,8 @@ function App() {
   const [contactRequestError, setContactRequestError] = useState<string | null>(null);
   const [hasUnlockedWhatsapp, setHasUnlockedWhatsapp] = useState(false);
   const [consultantSection, setConsultantSection] = useState<ConsultantSection>("dashboard");
-  const [consultantAuthenticated, setConsultantAuthenticated] = useState(false);
+  const [consultantSession, setConsultantSession] = useState<Session | null>(null);
+  const [consultantAuthError, setConsultantAuthError] = useState<string | null>(null);
   const [consultantForm, setConsultantForm] = useState({
     email: "",
     password: "",
@@ -358,6 +366,33 @@ function App() {
     };
   }, [isContactModalOpen]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    void getCurrentSession().then((result) => {
+      if (!isMounted || !result.success) {
+        return;
+      }
+
+      setConsultantSession(result.data);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setConsultantSession(session);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const openContactModal = (target: ContactTarget) => {
     setContactTarget(target);
     setContactRequestError(null);
@@ -487,14 +522,30 @@ function App() {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const handleConsultantLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleConsultantLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setConsultantAuthenticated(true);
+
+    const result = await signInPartner(consultantForm.email, consultantForm.password);
+
+    if (!result.success) {
+      setConsultantAuthError("Não foi possível entrar agora. Verifique seu email e senha e tente novamente.");
+      return;
+    }
+
+    setConsultantAuthError(null);
+    setConsultantSession(result.data);
     setConsultantSection("dashboard");
   };
 
-  const handleConsultantLogout = () => {
-    setConsultantAuthenticated(false);
+  const handleConsultantLogout = async () => {
+    const result = await signOutPartner();
+
+    if (!result.success) {
+      return;
+    }
+
+    setConsultantSession(null);
+    setConsultantAuthError(null);
   };
 
   const handleViewAllRecommendations = () => {
@@ -677,9 +728,10 @@ function App() {
 
       {screen === "consultor" && (
         <ConsultorScreen
-          consultantAuthenticated={consultantAuthenticated}
+          consultantAuthenticated={Boolean(consultantSession)}
           consultantSection={consultantSection}
           consultantForm={consultantForm}
+          consultantAuthError={consultantAuthError}
           consultantStats={consultantStats}
           consultantLeads={consultantLeads}
           consultantAgenda={consultantAgenda}
@@ -687,15 +739,18 @@ function App() {
           onConsultantLogin={handleConsultantLogin}
           onConsultantLogout={handleConsultantLogout}
           onConsultantSectionChange={setConsultantSection}
-          onConsultantEmailChange={(event) =>
-            setConsultantForm((previous) => ({ ...previous, email: event.target.value }))
-          }
-          onConsultantPasswordChange={(event) =>
-            setConsultantForm((previous) => ({ ...previous, password: event.target.value }))
-          }
-          onConsultantInstanceChange={(event) =>
-            setConsultantForm((previous) => ({ ...previous, instance: event.target.value }))
-          }
+          onConsultantEmailChange={(event) => {
+            setConsultantAuthError(null);
+            setConsultantForm((previous) => ({ ...previous, email: event.target.value }));
+          }}
+          onConsultantPasswordChange={(event) => {
+            setConsultantAuthError(null);
+            setConsultantForm((previous) => ({ ...previous, password: event.target.value }));
+          }}
+          onConsultantInstanceChange={(event) => {
+            setConsultantAuthError(null);
+            setConsultantForm((previous) => ({ ...previous, instance: event.target.value }));
+          }}
         />
       )}
 
