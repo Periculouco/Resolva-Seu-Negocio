@@ -195,11 +195,17 @@ function App() {
     id: lead.id,
     company: lead.company || "Empresa não informada",
     contact: lead.contact_name,
+    email: lead.contact_email,
+    phone: lead.contact_phone || "Telefone não informado",
     role: lead.contact_role || "Cargo não informado",
     status: lead.status,
+    challenge: lead.challenge || "Desafio inicial não informado",
     diagnosis: lead.diagnosis_title,
+    diagnosisSummary: lead.diagnosis_summary || "Resumo do diagnóstico não informado",
     objective: lead.primary_goal_label || "Objetivo não informado",
     urgency: lead.main_pain || "Urgência não informada",
+    recommendedCategory: lead.recommended_category || "Direção não informada",
+    recommendedSpecialist: lead.recommended_specialist_name || "Especialista não informado",
     updatedAt: formatLeadTimestamp(lead.updated_at),
   });
 

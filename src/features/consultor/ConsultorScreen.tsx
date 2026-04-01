@@ -1,4 +1,5 @@
-import type { ChangeEventHandler, FormEventHandler } from "react";
+import { useState } from "react";
+import type { ChangeEventHandler, FormEventHandler, MouseEventHandler } from "react";
 
 import type { ConsultantAgendaItem, ConsultantLead, ConsultantSection } from "../../types/domain";
 
@@ -52,6 +53,68 @@ export function ConsultorScreen({
   onConsultantPasswordChange,
   onConsultantInstanceChange,
 }: ConsultorScreenProps) {
+  const [selectedLead, setSelectedLead] = useState<ConsultantLead | null>(null);
+  const nextMeeting = consultantAgenda[0] ?? null;
+  const openPipelineCount = consultantLeads.filter((lead) => lead.status !== "Perdido").length;
+  const qualifiedCount = consultantLeads.filter(
+    (lead) => lead.status === "Qualificado" || lead.status === "Reunião marcada",
+  ).length;
+
+  const getLeadPriority = (lead: ConsultantLead) => {
+    const urgency = lead.urgency.toLowerCase();
+
+    if (lead.status === "Novo" && /(trav|caos|urg|perd|apag|sem|garg)/.test(urgency)) {
+      return "Alta prioridade";
+    }
+
+    if (lead.status === "Em contato" || lead.status === "Qualificado") {
+      return "Em andamento";
+    }
+
+    if (lead.status === "Reunião marcada") {
+      return "Reunião pronta";
+    }
+
+    if (lead.status === "Perdido") {
+      return "Reengajar depois";
+    }
+
+    return "Nova oportunidade";
+  };
+
+  const getLeadPriorityClassName = (lead: ConsultantLead) => {
+    const priority = getLeadPriority(lead);
+
+    if (priority === "Alta prioridade") {
+      return "consultant-priority-high";
+    }
+
+    if (priority === "Reunião pronta") {
+      return "consultant-priority-ready";
+    }
+
+    if (priority === "Reengajar depois") {
+      return "consultant-priority-low";
+    }
+
+    return "consultant-priority-medium";
+  };
+
+  const pipelineColumns: Array<{
+    id: ConsultantLead["status"];
+    label: string;
+    helper: string;
+  }> = [
+    { id: "Novo", label: "Qualificados", helper: "Leads recém-chegados do diagnóstico" },
+    { id: "Em contato", label: "Contato feito", helper: "Leads em abordagem comercial" },
+    { id: "Qualificado", label: "Demo agendada", helper: "Já existe aderência e próxima ação" },
+    { id: "Reunião marcada", label: "Proposta feita", helper: "Leads em reta final de conversão" },
+  ];
+
+  const stopLeadModalPropagation: MouseEventHandler<HTMLElement> = (event) => {
+    event.stopPropagation();
+  };
+
   return (
     <main className="consultant-layout">
       {!consultantAuthenticated ? (
@@ -207,9 +270,27 @@ export function ConsultorScreen({
               <>
                 <div className="consultant-stats-grid">
                   {consultantStats.map((stat) => (
-                    <article className="consultant-stat-card" key={stat.label}>
+                    <article
+                      className={
+                        stat.label === "Reuniões marcadas"
+                          ? "consultant-stat-card consultant-stat-card-success"
+                          : stat.label === "Em contato"
+                            ? "consultant-stat-card consultant-stat-card-warm"
+                            : "consultant-stat-card"
+                      }
+                      key={stat.label}
+                    >
                       <span>{stat.label}</span>
                       <strong>{stat.value}</strong>
+                      <small>
+                        {stat.label === "Leads recebidos"
+                          ? "Entrada total vinda da recomendação e do modal"
+                          : stat.label === "Em contato"
+                            ? "Leads já em abordagem ou follow-up ativo"
+                            : stat.label === "Reuniões marcadas"
+                              ? "Conversas que já avançaram para conversa comercial"
+                              : "Leads que já chegaram com aderência suficiente"}
+                      </small>
                     </article>
                   ))}
                 </div>
@@ -217,30 +298,55 @@ export function ConsultorScreen({
                 <div className="consultant-panels">
                   <section className="consultant-panel">
                     <div className="consultant-panel-header">
-                      <h2>Leads mais recentes</h2>
-                      <span>Entrada via diagnóstico</span>
+                      <h2>Pipeline comercial</h2>
+                      <span>Clique no card para abrir o lead com mais contexto</span>
                     </div>
-                    <div className="consultant-lead-list">
+                    <div className="consultant-pipeline-board consultant-pipeline-preview">
                       {consultantLeadsLoading ? (
                         <p className="result-cta-hint">Carregando leads da instância...</p>
                       ) : consultantLeads.length === 0 ? (
                         <p className="result-cta-hint">Ainda não há leads registrados para esta instância.</p>
                       ) : (
-                        consultantLeads.slice(0, 3).map((lead) => (
-                          <article className="consultant-lead-card" key={lead.id}>
-                            <div>
-                              <strong>{lead.company}</strong>
-                              <span>
-                                {lead.contact} · {lead.role}
-                              </span>
+                        pipelineColumns.map((column) => (
+                          <section className="consultant-pipeline-column" key={column.id}>
+                            <div className="consultant-pipeline-column-header">
+                              <div>
+                                <strong>{column.label}</strong>
+                                <span>{column.helper}</span>
+                              </div>
+                              <small>{consultantLeads.filter((lead) => lead.status === column.id).length}</small>
                             </div>
-                            <div className="consultant-lead-meta">
-                              <span className={`status-pill status-${toStatusClassName(lead.status)}`}>
-                                {lead.status}
-                              </span>
-                              <small>{lead.updatedAt}</small>
+
+                            <div className="consultant-pipeline-stack">
+                              {consultantLeads.filter((lead) => lead.status === column.id).length === 0 ? (
+                                <p className="result-cta-hint">Nenhum lead nesta etapa.</p>
+                              ) : (
+                                consultantLeads
+                                  .filter((lead) => lead.status === column.id)
+                                  .slice(0, 2)
+                                  .map((lead) => (
+                                    <button
+                                      className="consultant-pipeline-card"
+                                      key={lead.id}
+                                      type="button"
+                                      onClick={() => setSelectedLead(lead)}
+                                    >
+                                      <div className="consultant-pipeline-card-head">
+                                        <strong>{lead.company}</strong>
+                                        <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
+                                          {getLeadPriority(lead)}
+                                        </span>
+                                      </div>
+                                      <span>
+                                        {lead.contact} · {lead.role}
+                                      </span>
+                                      <p>{lead.diagnosis}</p>
+                                      <small>{lead.objective}</small>
+                                    </button>
+                                  ))
+                              )}
                             </div>
-                          </article>
+                          </section>
                         ))
                       )}
                     </div>
@@ -249,7 +355,7 @@ export function ConsultorScreen({
                   <section className="consultant-panel">
                     <div className="consultant-panel-header">
                       <h2>Agenda do time</h2>
-                      <span>Próximos slots confirmados</span>
+                      <span>Organize follow-up e passagem para reunião</span>
                     </div>
                     <div className="consultant-agenda-list">
                       {consultantAgendaLoading ? (
@@ -277,31 +383,61 @@ export function ConsultorScreen({
             )}
 
             {consultantSection === "leads" && (
-              <section className="consultant-data-table">
-                <div className="consultant-table-header">
-                  <span>Empresa</span>
-                  <span>Diagnóstico</span>
-                  <span>Objetivo</span>
-                  <span>Status</span>
-                  <span>Atualização</span>
+              <section className="consultant-data-table consultant-leads-board">
+                <div className="consultant-table-header consultant-table-header-rich">
+                  <span>Funil comercial</span>
                 </div>
                 {consultantLeadsLoading ? (
                   <p className="result-cta-hint">Carregando leads da instância...</p>
                 ) : consultantLeads.length === 0 ? (
                   <p className="result-cta-hint">Ainda não há leads registrados para esta instância.</p>
                 ) : (
-                  consultantLeads.map((lead) => (
-                    <article className="consultant-table-row" key={lead.id}>
-                      <div>
-                        <strong>{lead.company}</strong>
-                        <span>{lead.contact}</span>
-                      </div>
-                      <p>{lead.diagnosis}</p>
-                      <p>{lead.objective}</p>
-                      <span className={`status-pill status-${toStatusClassName(lead.status)}`}>{lead.status}</span>
-                      <small>{lead.updatedAt}</small>
-                    </article>
-                  ))
+                  <div className="consultant-pipeline-board">
+                    {pipelineColumns.map((column) => (
+                      <section className="consultant-pipeline-column" key={column.id}>
+                        <div className="consultant-pipeline-column-header">
+                          <div>
+                            <strong>{column.label}</strong>
+                            <span>{column.helper}</span>
+                          </div>
+                          <small>{consultantLeads.filter((lead) => lead.status === column.id).length}</small>
+                        </div>
+
+                        <div className="consultant-pipeline-stack">
+                          {consultantLeads.filter((lead) => lead.status === column.id).length === 0 ? (
+                            <p className="result-cta-hint">Nenhum lead nesta etapa.</p>
+                          ) : (
+                            consultantLeads
+                              .filter((lead) => lead.status === column.id)
+                              .map((lead) => (
+                                <button
+                                  className="consultant-pipeline-card consultant-pipeline-card-detailed"
+                                  key={lead.id}
+                                  type="button"
+                                  onClick={() => setSelectedLead(lead)}
+                                >
+                                  <div className="consultant-pipeline-card-head">
+                                    <strong>{lead.company}</strong>
+                                    <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
+                                      {getLeadPriority(lead)}
+                                    </span>
+                                  </div>
+                                  <span>
+                                    {lead.contact} · {lead.role}
+                                  </span>
+                                  <p>{lead.diagnosis}</p>
+                                  <div className="consultant-pipeline-card-tags">
+                                    <span className="consultant-context-chip">{lead.objective}</span>
+                                    <span className="consultant-context-chip">{lead.recommendedCategory}</span>
+                                  </div>
+                                  <small>{lead.updatedAt}</small>
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
                 )}
               </section>
             )}
@@ -407,6 +543,74 @@ export function ConsultorScreen({
             )}
           </div>
         </section>
+      )}
+
+      {selectedLead && (
+        <div className="modal-overlay" role="presentation" onClick={() => setSelectedLead(null)}>
+          <section
+            className="contact-modal consultant-lead-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="consultant-lead-modal-title"
+            onClick={stopLeadModalPropagation}
+          >
+            <div className="contact-modal-header consultant-lead-modal-header">
+              <div>
+                <p className="section-kicker">Lead quente do diagnóstico</p>
+                <h2 id="consultant-lead-modal-title">{selectedLead.company}</h2>
+                <p>
+                  {selectedLead.contact} · {selectedLead.role}
+                </p>
+              </div>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setSelectedLead(null)}
+                aria-label="Fechar modal"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="consultant-lead-modal-grid">
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Contato</p>
+                <strong>{selectedLead.contact}</strong>
+                <span>{selectedLead.email}</span>
+                <span>{selectedLead.phone}</span>
+              </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Status e prioridade</p>
+                <div className="consultant-lead-modal-chips">
+                  <span className={`status-pill status-${toStatusClassName(selectedLead.status)}`}>{selectedLead.status}</span>
+                  <span className={`consultant-priority-chip ${getLeadPriorityClassName(selectedLead)}`}>
+                    {getLeadPriority(selectedLead)}
+                  </span>
+                </div>
+                <span>Atualizado em {selectedLead.updatedAt}</span>
+              </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Desafio inicial</p>
+                <strong>{selectedLead.challenge}</strong>
+              </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Dor principal</p>
+                <strong>{selectedLead.urgency}</strong>
+              </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Diagnóstico</p>
+                <strong>{selectedLead.diagnosis}</strong>
+                <span>{selectedLead.diagnosisSummary}</span>
+              </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Leitura do quiz</p>
+                <strong>{selectedLead.objective}</strong>
+                <span>Direção sugerida: {selectedLead.recommendedCategory}</span>
+                <span>Especialista recomendado: {selectedLead.recommendedSpecialist}</span>
+              </div>
+            </div>
+          </section>
+        </div>
       )}
     </main>
   );

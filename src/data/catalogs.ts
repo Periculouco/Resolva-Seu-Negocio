@@ -9,6 +9,9 @@ import type {
   Specialist,
 } from "../types/domain";
 
+/** Instância operacional padrão (deve bater com `partner_profiles.instance_slug` no Supabase). */
+const defaultPartnerInstanceSlug = "resolva-seu-negocio";
+
 export const specialists: Record<Area, Specialist> = {
   vendas: {
     id: "consultor_vendas_1",
@@ -23,6 +26,7 @@ export const specialists: Record<Area, Specialist> = {
       "Treinamento de prospecção e follow-up",
     ],
     whatsapp: "https://wa.me/5585000000101",
+    partnerInstanceSlug: defaultPartnerInstanceSlug,
   },
   marketing: {
     id: "consultor_marketing_1",
@@ -37,6 +41,7 @@ export const specialists: Record<Area, Specialist> = {
       "Leitura de CAC, CPL e conversão",
     ],
     whatsapp: "https://wa.me/5585000000102",
+    partnerInstanceSlug: defaultPartnerInstanceSlug,
   },
   gestao: {
     id: "consultor_gestao_1",
@@ -51,6 +56,7 @@ export const specialists: Record<Area, Specialist> = {
       "Plano de ação para gargalos recorrentes",
     ],
     whatsapp: "https://wa.me/5585000000103",
+    partnerInstanceSlug: defaultPartnerInstanceSlug,
   },
   financeiro: {
     id: "consultor_financeiro_1",
@@ -65,6 +71,7 @@ export const specialists: Record<Area, Specialist> = {
       "Rotina financeira com indicadores-chave",
     ],
     whatsapp: "https://wa.me/5585000000104",
+    partnerInstanceSlug: defaultPartnerInstanceSlug,
   },
   outros: {
     id: "time_diagnostico_rsn",
@@ -79,6 +86,7 @@ export const specialists: Record<Area, Specialist> = {
       "Priorização do primeiro passo de execução",
     ],
     whatsapp: "https://wa.me/5585000000105",
+    partnerInstanceSlug: defaultPartnerInstanceSlug,
   },
 };
 
@@ -406,44 +414,68 @@ export const consultantLeads: ConsultantLead[] = [
     id: "lead-001",
     company: "Clínica Horizonte",
     contact: "Fernanda Melo",
+    email: "fernanda@clinicahorizonte.com",
+    phone: "(85) 99999-1001",
     role: "Diretora de operações",
     status: "Novo",
+    challenge: "Quero vender melhor sem depender só de indicação.",
     diagnosis: "Falta de previsibilidade comercial",
+    diagnosisSummary: "Operação comercial sem rotina de acompanhamento e pouca clareza de funil.",
     objective: "Aumentar faturamento com mais previsibilidade",
     urgency: "Alta",
+    recommendedCategory: "Vendas",
+    recommendedSpecialist: "Marcos Tavares",
     updatedAt: "Hoje, 09:12",
   },
   {
     id: "lead-002",
     company: "Ativa Engenharia",
     contact: "Rafael Lima",
+    email: "rafael@ativaengenharia.com",
+    phone: "(85) 99999-1002",
     role: "Sócio",
     status: "Em contato",
+    challenge: "A empresa cresce, mas a operação está virando gargalo.",
     diagnosis: "Gargalos operacionais travando a escala",
+    diagnosisSummary: "Há crescimento, mas sem dono claro por frente e com retrabalho frequente.",
     objective: "Escalar o negócio de forma estruturada e sustentável",
     urgency: "Média",
+    recommendedCategory: "Gestao & Estrategia",
+    recommendedSpecialist: "Renata Mota",
     updatedAt: "Hoje, 10:41",
   },
   {
     id: "lead-003",
     company: "Verde Varejo",
     contact: "Patrícia Gomes",
+    email: "patricia@verdevarejo.com",
+    phone: "(85) 99999-1003",
     role: "CEO",
     status: "Qualificado",
+    challenge: "Preciso organizar caixa e operação para crescer com segurança.",
     diagnosis: "Falta de clareza financeira para crescer com segurança",
+    diagnosisSummary: "Decisão financeira ainda acontece com baixa previsibilidade de caixa e margem.",
     objective: "Estruturar melhor processos e ter mais controle da operação",
     urgency: "Alta",
+    recommendedCategory: "Financas",
+    recommendedSpecialist: "Eduardo Nery",
     updatedAt: "Ontem, 17:28",
   },
   {
     id: "lead-004",
     company: "Conecta Hub",
     contact: "Diego Rocha",
+    email: "diego@conectahub.com",
+    phone: "(85) 99999-1004",
     role: "Head Comercial",
     status: "Reunião marcada",
+    challenge: "Estamos atraindo leads, mas sem previsibilidade de aquisição.",
     diagnosis: "Aquisição sem previsibilidade",
+    diagnosisSummary: "Marketing e comercial não estão operando com leitura clara de conversão por canal.",
     objective: "Corrigir gargalos que estão travando o crescimento",
     urgency: "Média",
+    recommendedCategory: "Marketing & Growth",
+    recommendedSpecialist: "Camila Ferraz",
     updatedAt: "Ontem, 15:03",
   },
 ];

@@ -12,6 +12,8 @@ export type Specialist = {
   description: string;
   bullets: string[];
   whatsapp: string;
+  /** Slug da instância em `partner_profiles` / `leads.partner_instance_slug` (mesmo tenant operacional). */
+  partnerInstanceSlug: string;
 };
 
 export type ExploreItem = {
@@ -50,11 +52,17 @@ export type ConsultantLead = {
   id: string;
   company: string;
   contact: string;
+  email: string;
+  phone: string;
   role: string;
   status: "Novo" | "Em contato" | "Qualificado" | "Reunião marcada" | "Perdido";
+  challenge: string;
   diagnosis: string;
+  diagnosisSummary: string;
   objective: string;
   urgency: string;
+  recommendedCategory: string;
+  recommendedSpecialist: string;
   updatedAt: string;
 };
 
