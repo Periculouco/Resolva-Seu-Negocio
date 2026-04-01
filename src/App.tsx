@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+
 import {
   categories,
   consultantAgenda,
@@ -30,14 +31,14 @@ import {
   inferArea,
 } from "./lib/diagnosis";
 import { findOptionLabel, formatCategoryLabel, toStatusClassName } from "./lib/formatters";
-import { ExploreScreen } from "./features/explore/ExploreScreen";
 import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
+import { ExploreScreen } from "./features/explore/ExploreScreen";
 import { LandingScreen } from "./features/landing/LandingScreen";
 import { QuizScreen } from "./features/quiz/QuizScreen";
 import { ResultScreen } from "./features/result/ResultScreen";
 import { ContactModal } from "./features/shared/ContactModal";
+
 import type {
-  ConsultantAgendaItem,
   ConsultantLead,
   ConsultantSection,
   ContactTarget,
@@ -203,6 +204,13 @@ function App() {
 
   const openConsultantArea = () => {
     setScreen("consultor");
+  };
+
+  const openExplore = () => {
+    setIsPersonalizedExplore(false);
+    setExploreQuery("");
+    setActiveExploreCategory("Todos");
+    setScreen("explore");
   };
 
   const submitChallenge = (event: FormEvent<HTMLFormElement>) => {
@@ -390,6 +398,32 @@ function App() {
     setConsultantSection("dashboard");
   };
 
+  const handleConsultantLogout = () => {
+    setConsultantAuthenticated(false);
+  };
+
+  const handleViewAllRecommendations = () => {
+    setIsPersonalizedExplore(true);
+    setScreen("explore");
+  };
+
+  const handleContactModalOpen = () => {
+    openContactModal({
+      name: specialist.name,
+      title: specialist.title,
+      whatsapp: specialist.whatsapp,
+    });
+  };
+
+  const quizOptions = {
+    revenueProfileOptions,
+    businessMomentOptions,
+    decisionMakingOptions,
+    currentBottleneckOptions,
+    solutionExperienceOptions,
+    primaryGoalOptions,
+  };
+
   const consultantStats = useMemo(() => {
     const statusCount = consultantLeads.reduce<Record<ConsultantLead["status"], number>>(
       (accumulator, lead) => {
@@ -426,12 +460,7 @@ function App() {
           </button>
           <button
             className={screen === "explore" ? "nav-link active" : "nav-link"}
-            onClick={() => {
-              setIsPersonalizedExplore(false);
-              setExploreQuery("");
-              setActiveExploreCategory("Todos");
-              setScreen("explore");
-            }}
+            onClick={openExplore}
           >
             Explorar
           </button>
@@ -526,14 +555,7 @@ function App() {
           formData={formData}
           stepTitle={stepTitle}
           canContinue={canContinue}
-          options={{
-            revenueProfileOptions,
-            businessMomentOptions,
-            decisionMakingOptions,
-            currentBottleneckOptions,
-            solutionExperienceOptions,
-            primaryGoalOptions,
-          }}
+          options={quizOptions}
           onUpdateField={updateField}
           onPreviousStep={previousStep}
           onNextStep={nextStep}
@@ -550,19 +572,10 @@ function App() {
           primaryGoalLabel={findOptionLabel(primaryGoalOptions, formData.primaryGoal)}
           businessMomentLabel={findOptionLabel(businessMomentOptions, formData.businessMoment)}
           formatCategoryLabel={formatCategoryLabel}
-          onOpenContactModal={() =>
-            openContactModal({
-              name: specialist.name,
-              title: specialist.title,
-              whatsapp: specialist.whatsapp,
-            })
-          }
+          onOpenContactModal={handleContactModalOpen}
           onOpenWhatsAppDirect={openWhatsAppDirect}
-          onGoHome={() => setScreen("landing")}
-          onViewAllRecommendations={() => {
-            setIsPersonalizedExplore(true);
-            setScreen("explore");
-          }}
+          onGoHome={goHome}
+          onViewAllRecommendations={handleViewAllRecommendations}
           onOpenExploreCategory={openExploreCategory}
         />
       )}
@@ -577,7 +590,7 @@ function App() {
           consultantAgenda={consultantAgenda}
           toStatusClassName={toStatusClassName}
           onConsultantLogin={handleConsultantLogin}
-          onConsultantLogout={() => setConsultantAuthenticated(false)}
+          onConsultantLogout={handleConsultantLogout}
           onConsultantSectionChange={setConsultantSection}
           onConsultantEmailChange={(event) =>
             setConsultantForm((previous) => ({ ...previous, email: event.target.value }))
