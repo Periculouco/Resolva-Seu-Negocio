@@ -58,6 +58,7 @@ export function ConsultorScreen({
   onConsultantInstanceChange,
 }: ConsultorScreenProps) {
   const [selectedLead, setSelectedLead] = useState<ConsultantLead | null>(null);
+  const [kanbanSearch, setKanbanSearch] = useState("");
   const nextMeeting = consultantAgenda[0] ?? null;
   const openPipelineCount = consultantLeads.filter((lead) => lead.status !== "Perdido").length;
   const contactedCount = consultantLeads.filter((lead) => lead.status === "Em contato").length;
@@ -205,10 +206,48 @@ export function ConsultorScreen({
     () =>
       pipelineColumns.map((column) => ({
         ...column,
-        leads: consultantLeads.filter((lead) => lead.status === column.id),
+        leads: consultantLeads.filter((lead) => {
+          if (lead.status !== column.id) {
+            return false;
+          }
+
+          const normalizedSearch = kanbanSearch.trim().toLowerCase();
+
+          if (!normalizedSearch) {
+            return true;
+          }
+
+          return [
+            lead.company,
+            lead.contact,
+            lead.diagnosis,
+            lead.recommendedCategory,
+            lead.objective,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedSearch);
+        }),
       })),
-    [consultantLeads, pipelineColumns],
+    [consultantLeads, kanbanSearch, pipelineColumns],
   );
+
+  const visibleLeadCount = leadsByStatus.reduce((total, column) => total + column.leads.length, 0);
+
+  const openLeadWhatsApp = (lead: ConsultantLead) => {
+    const digits = lead.phone.replace(/\D/g, "");
+
+    if (!digits) {
+      setSelectedLead(lead);
+      return;
+    }
+
+    const message = encodeURIComponent(
+      `Olá, ${lead.contact}. Estou entrando em contato sobre o diagnóstico da ${lead.company}.`,
+    );
+
+    window.open(`https://wa.me/${digits}?text=${message}`, "_blank", "noopener,noreferrer");
+  };
 
   const lineChartPath = useMemo(() => {
     const width = 360;
@@ -636,7 +675,7 @@ export function ConsultorScreen({
               <section className="consultant-data-table consultant-leads-board">
                 <div className="consultant-panel-header">
                   <h2>Kanban comercial</h2>
-                  <span>{consultantLeads.length} leads no pipeline</span>
+                  <span>{visibleLeadCount} leads no pipeline</span>
                 </div>
                 <div className="consultant-kanban-toolbar">
                   <div className="consultant-kanban-toolbar-group">
@@ -649,6 +688,14 @@ export function ConsultorScreen({
                     <button className="consultant-toolbar-icon" type="button" aria-label="Atualizar pipeline">
                       ↻
                     </button>
+                    <label className="consultant-kanban-search" aria-label="Buscar lead no pipeline">
+                      <input
+                        type="text"
+                        placeholder="Buscar lead"
+                        value={kanbanSearch}
+                        onChange={(event) => setKanbanSearch(event.target.value)}
+                      />
+                    </label>
                   </div>
                   <div className="consultant-kanban-toolbar-meta">
                     <span className="consultant-toolbar-total">
@@ -656,6 +703,9 @@ export function ConsultorScreen({
                     </span>
                     <button className="consultant-toolbar-select" type="button">
                       Pipeline comercial
+                    </button>
+                    <button className="consultant-toolbar-select" type="button">
+                      Todos os leads
                     </button>
                   </div>
                 </div>
@@ -714,6 +764,28 @@ export function ConsultorScreen({
                                         {getLeadPriority(lead)}
                                       </span>
                                     </div>
+                                  </div>
+                                  <div className="consultant-pipeline-card-quick-actions">
+                                    <button
+                                      className="consultant-card-action"
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openLeadWhatsApp(lead);
+                                      }}
+                                    >
+                                      WhatsApp
+                                    </button>
+                                    <button
+                                      className="consultant-card-action"
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setSelectedLead(lead);
+                                      }}
+                                    >
+                                      Abrir
+                                    </button>
                                   </div>
                                 </button>
                               ))

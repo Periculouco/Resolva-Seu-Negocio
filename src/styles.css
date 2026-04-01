@@ -2868,6 +2868,7 @@ button {
 
 .consultant-pipeline-column {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
@@ -2908,8 +2909,10 @@ button {
 
 .consultant-pipeline-stack {
   display: grid;
+  grid-auto-rows: min-content;
   gap: 10px;
   align-content: start;
+  align-items: start;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -2927,6 +2930,25 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.consultant-kanban-search {
+  display: flex;
+  min-width: 210px;
+}
+
+.consultant-kanban-search input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--consultant-panel-border);
+  background: var(--consultant-surface);
+  color: var(--consultant-text);
+}
+
+.consultant-kanban-search input::placeholder {
+  color: var(--consultant-muted);
 }
 
 .consultant-toolbar-icon,
@@ -2959,9 +2981,9 @@ button {
 
 .consultant-pipeline-card {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 12px;
+  padding: 10px 10px 9px;
   border-radius: 10px;
   border: 1px solid var(--consultant-card-border);
   background: var(--consultant-card-bg);
@@ -3024,7 +3046,7 @@ button {
   color: var(--consultant-text);
   font-weight: 600;
   line-height: 1.35;
-  font-size: 0.94rem;
+  font-size: 0.92rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -3042,7 +3064,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1rem;
+  font-size: 0.98rem;
 }
 
 .consultant-pipeline-card-brand {
@@ -3080,13 +3102,13 @@ button {
 
 .consultant-pipeline-card-person span {
   color: var(--consultant-muted);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
 }
 
 .consultant-pipeline-card-person small,
 .consultant-pipeline-card-meta {
   color: var(--consultant-soft);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
 }
 
 .consultant-pipeline-card-meta {
@@ -3118,6 +3140,24 @@ button {
   gap: 6px;
   min-width: 0;
   flex-wrap: wrap;
+}
+
+.consultant-pipeline-card-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.consultant-card-action {
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--consultant-panel-border);
+  background: color-mix(in srgb, var(--consultant-surface) 92%, transparent);
+  color: var(--consultant-text);
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .consultant-panels {
@@ -3651,6 +3691,11 @@ button {
 
 .consultant-leads-board {
   gap: 12px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--consultant-surface) 96%, transparent),
+    color-mix(in srgb, var(--consultant-surface-alt) 96%, transparent)
+  );
 }
 
 .consultant-lead-modal {
@@ -3904,6 +3949,10 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .consultant-kanban-toolbar-group {
+    flex-wrap: wrap;
+  }
+
   .consultant-kanban-toolbar-meta {
     justify-content: space-between;
     flex-wrap: wrap;
@@ -3998,6 +4047,10 @@ button {
   .consultant-kanban-toolbar-group,
   .consultant-kanban-toolbar-meta {
     flex-wrap: wrap;
+  }
+
+  .consultant-kanban-search {
+    min-width: 100%;
   }
 
   .consultant-app-bar {
