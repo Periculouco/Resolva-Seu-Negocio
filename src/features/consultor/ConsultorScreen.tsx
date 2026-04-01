@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ChangeEventHandler, FormEventHandler, MouseEventHandler } from "react";
 
 import type { ConsultantAgendaItem, ConsultantLead, ConsultantSection } from "../../types/domain";
@@ -16,6 +16,7 @@ type ConsultantStat = {
 
 type ConsultorScreenProps = {
   consultantAuthenticated: boolean;
+  themeMode: "light" | "dark";
   consultantSection: ConsultantSection;
   consultantForm: ConsultantForm;
   consultantAuthError: string | null;
@@ -28,6 +29,7 @@ type ConsultorScreenProps = {
   toStatusClassName: (value: string) => string;
   onConsultantLogin: FormEventHandler<HTMLFormElement>;
   onConsultantLogout: () => void;
+  onToggleTheme: () => void;
   onConsultantSectionChange: (section: ConsultantSection) => void;
   onConsultantEmailChange: ChangeEventHandler<HTMLInputElement>;
   onConsultantPasswordChange: ChangeEventHandler<HTMLInputElement>;
@@ -36,6 +38,7 @@ type ConsultorScreenProps = {
 
 export function ConsultorScreen({
   consultantAuthenticated,
+  themeMode,
   consultantSection,
   consultantForm,
   consultantAuthError,
@@ -48,21 +51,24 @@ export function ConsultorScreen({
   toStatusClassName,
   onConsultantLogin,
   onConsultantLogout,
+  onToggleTheme,
   onConsultantSectionChange,
   onConsultantEmailChange,
   onConsultantPasswordChange,
   onConsultantInstanceChange,
 }: ConsultorScreenProps) {
   const [selectedLead, setSelectedLead] = useState<ConsultantLead | null>(null);
-  const [consultantTheme, setConsultantTheme] = useState<"light" | "dark">("light");
   const nextMeeting = consultantAgenda[0] ?? null;
   const openPipelineCount = consultantLeads.filter((lead) => lead.status !== "Perdido").length;
+  const contactedCount = consultantLeads.filter((lead) => lead.status === "Em contato").length;
   const qualifiedCount = consultantLeads.filter(
     (lead) => lead.status === "Qualificado" || lead.status === "Reunião marcada",
   ).length;
   const lostCount = consultantLeads.filter((lead) => lead.status === "Perdido").length;
+  const conversionRate = consultantLeads.length > 0 ? Math.round((qualifiedCount / consultantLeads.length) * 100) : 0;
   const activeLead = consultantLeads.find((lead) => lead.status !== "Perdido") ?? consultantLeads[0] ?? null;
   const agendaPreview = consultantAgenda.slice(0, 3);
+  const recentLeads = consultantLeads.slice(0, 5);
 
   const getLeadPriority = (lead: ConsultantLead) => {
     const urgency = lead.urgency.toLowerCase();
@@ -119,6 +125,90 @@ export function ConsultorScreen({
   const stopLeadModalPropagation: MouseEventHandler<HTMLElement> = (event) => {
     event.stopPropagation();
   };
+
+  const dailyLeadSeries = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - (6 - index));
+      return {
+        key: date.toISOString().slice(0, 10),
+        label: formatter.format(date),
+        count: 0,
+      };
+    });
+
+    const dayIndex = new Map(days.map((day, index) => [day.key, index]));
+
+    consultantLeads.forEach((lead) => {
+      const key = lead.createdAtIso.slice(0, 10);
+      const index = dayIndex.get(key);
+
+      if (index !== undefined) {
+        days[index].count += 1;
+      }
+    });
+
+    return days;
+  }, [consultantLeads]);
+
+  const stageSeries = useMemo(
+    () =>
+      pipelineColumns.map((column) => ({
+        label: column.label,
+        value: consultantLeads.filter((lead) => lead.status === column.id).length,
+      })),
+    [consultantLeads, pipelineColumns],
+  );
+
+  const maxDailyLeadCount = Math.max(...dailyLeadSeries.map((item) => item.count), 1);
+  const totalStageCount = Math.max(stageSeries.reduce((total, stage) => total + stage.value, 0), 1);
+
+  const donutSegments = useMemo(() => {
+    const radius = 52;
+    const circumference = 2 * Math.PI * radius;
+    const colors = ["#f97316", "#fb923c", "#60a5fa", "#22c55e", "#f87171"];
+    let offset = 0;
+
+    return stageSeries.map((stage, index) => {
+      const ratio = stage.value / totalStageCount;
+      const length = circumference * ratio;
+      const segment = {
+        ...stage,
+        color: colors[index % colors.length],
+        circumference,
+        length,
+        offset,
+      };
+      offset -= length;
+      return segment;
+    });
+  }, [stageSeries, totalStageCount]);
+
+  const leadsByStatus = useMemo(
+    () =>
+      pipelineColumns.map((column) => ({
+        ...column,
+        leads: consultantLeads.filter((lead) => lead.status === column.id),
+      })),
+    [consultantLeads, pipelineColumns],
+  );
+
+  const lineChartPath = useMemo(() => {
+    const width = 360;
+    const height = 152;
+    const maxValue = Math.max(...dailyLeadSeries.map((item) => item.count), 1);
+
+    return dailyLeadSeries
+      .map((item, index) => {
+        const x = (index / Math.max(dailyLeadSeries.length - 1, 1)) * width;
+        const y = height - (item.count / maxValue) * (height - 18) - 9;
+
+        return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+      })
+      .join(" ");
+  }, [dailyLeadSeries]);
 
   return (
     <main className="consultant-layout">
@@ -193,7 +283,7 @@ export function ConsultorScreen({
       ) : (
         <section
           className={
-            consultantTheme === "dark"
+            themeMode === "dark"
               ? "consultant-dashboard consultant-theme-dark"
               : "consultant-dashboard consultant-theme-light"
           }
@@ -206,6 +296,11 @@ export function ConsultorScreen({
                 <span>{consultantInstanceSlug || "parceiro-rsn"}</span>
               </div>
             </div>
+
+            <label className="consultant-sidebar-search" aria-label="Buscar">
+              <span>Buscar</span>
+              <input type="text" placeholder="Leads, agenda, empresa..." readOnly value="" />
+            </label>
 
             <div className="consultant-sidebar-nav">
               {[
@@ -287,104 +382,170 @@ export function ConsultorScreen({
                 </h1>
                 <p>
                   {consultantSection === "dashboard"
-                    ? "Visão rápida do funil, da agenda e das próximas ações."
+                    ? "KPIs, pipeline e ações do dia."
                     : consultantSection === "leads"
-                      ? "Board por etapa com contexto do diagnóstico e prioridade comercial."
+                      ? "Board por etapa com abertura rápida do lead."
                       : consultantSection === "agenda"
-                        ? "Próximos slots, reuniões e base de atendimento."
+                        ? "Reuniões e disponibilidade."
                         : "Dados exibidos ao lead e estrutura interna do parceiro."}
                 </p>
+              </div>
+              <div className="consultant-toolbar">
+                <button className="consultant-toolbar-button" type="button" onClick={() => onConsultantSectionChange("leads")}>
+                  Abrir pipeline
+                </button>
+                <button className="consultant-toolbar-button" type="button" onClick={() => activeLead && setSelectedLead(activeLead)}>
+                  Lead em foco
+                </button>
               </div>
             </div>
 
             {consultantSection === "dashboard" && (
               <>
                 <div className="consultant-stats-grid">
-                  {consultantStats.map((stat) => (
-                    <article
-                      className={
-                        stat.label === "Reuniões marcadas"
-                          ? "consultant-stat-card consultant-stat-card-success"
-                          : stat.label === "Em contato"
-                            ? "consultant-stat-card consultant-stat-card-warm"
-                            : "consultant-stat-card"
-                      }
-                      key={stat.label}
-                    >
-                      <span>{stat.label}</span>
-                      <strong>{stat.value}</strong>
-                      <small>
-                        {stat.label === "Leads recebidos"
-                          ? "Entrada do funil"
-                          : stat.label === "Em contato"
-                            ? "Follow-up ativo"
-                            : stat.label === "Reuniões marcadas"
-                              ? "Call comercial confirmada"
-                              : "Leads com aderência"}
-                      </small>
-                    </article>
-                  ))}
+                  <article className="consultant-stat-card">
+                    <span>Leads recebidos hoje</span>
+                    <strong>{consultantStats[0]?.value ?? "00"}</strong>
+                    <small>Entradas novas do diagnóstico e formulário</small>
+                  </article>
+                  <article className="consultant-stat-card consultant-stat-card-warm">
+                    <span>Em andamento</span>
+                    <strong>{contactedCount.toString().padStart(2, "0")}</strong>
+                    <small>Leads em follow-up comercial</small>
+                  </article>
+                  <article className="consultant-stat-card consultant-stat-card-success">
+                    <span>Leads fechados</span>
+                    <strong>{qualifiedCount.toString().padStart(2, "0")}</strong>
+                    <small>Qualificados e reuniões em fase final</small>
+                  </article>
+                  <article className="consultant-stat-card">
+                    <span>Taxa de conversão</span>
+                    <strong>{conversionRate}%</strong>
+                    <small>Percentual da base ativa com avanço real</small>
+                  </article>
                 </div>
 
                 <div className="consultant-dashboard-grid">
                   <section className="consultant-panel">
                     <div className="consultant-panel-header">
-                      <h2>Pipeline comercial</h2>
-                      <span>Board por etapa</span>
+                      <h2>Receita e andamento</h2>
+                      <span>Leitura rápida do pipeline</span>
                     </div>
-                    <div className="consultant-pipeline-board consultant-pipeline-preview">
+                    <div className="consultant-chart-grid">
+                      <article className="consultant-chart-card">
+                        <div className="consultant-chart-card-header">
+                          <strong>Entradas por dia</strong>
+                          <span>
+                            {dailyLeadSeries.reduce((total, item) => total + item.count, 0)} leads · pico de {maxDailyLeadCount}
+                          </span>
+                        </div>
+                        <div className="consultant-line-chart">
+                          <svg viewBox="0 0 360 180" aria-hidden="true">
+                            <defs>
+                              <linearGradient id="consultantLineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="rgba(249, 115, 22, 0.24)" />
+                                <stop offset="100%" stopColor="rgba(249, 115, 22, 0)" />
+                              </linearGradient>
+                            </defs>
+                            <path className="consultant-line-chart-gridline" d="M 0 150 H 360" />
+                            <path className="consultant-line-chart-gridline" d="M 0 102 H 360" />
+                            <path className="consultant-line-chart-gridline" d="M 0 54 H 360" />
+                            <path className="consultant-line-chart-area" d={`${lineChartPath} L 360 180 L 0 180 Z`} />
+                            <path className="consultant-line-chart-path" d={lineChartPath} />
+                            {dailyLeadSeries.map((item, index) => {
+                              const x = (index / Math.max(dailyLeadSeries.length - 1, 1)) * 360;
+                              const y = 152 - (item.count / maxDailyLeadCount) * (152 - 18);
+
+                              return (
+                                <g key={item.label}>
+                                  <circle className="consultant-line-chart-dot" cx={x} cy={y} r="4" />
+                                  <text className="consultant-line-chart-value" x={x} y={y - 12}>
+                                    {item.count}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                          </svg>
+                          <div className="consultant-line-chart-labels">
+                            {dailyLeadSeries.map((item) => (
+                              <span key={item.label}>{item.label}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </article>
+                      <article className="consultant-chart-card">
+                        <div className="consultant-chart-card-header">
+                          <strong>Distribuição por etapa</strong>
+                          <span>{totalStageCount.toString().padStart(2, "0")} leads no pipeline</span>
+                        </div>
+                        <div className="consultant-donut-card">
+                          <div className="consultant-donut-chart">
+                            <svg viewBox="0 0 140 140" aria-hidden="true">
+                              <circle className="consultant-donut-track" cx="70" cy="70" r="52" />
+                              {donutSegments.map((segment) => (
+                                <circle
+                                  key={segment.label}
+                                  className="consultant-donut-segment"
+                                  cx="70"
+                                  cy="70"
+                                  r="52"
+                                  stroke={segment.color}
+                                  strokeDasharray={`${segment.length} ${segment.circumference - segment.length}`}
+                                  strokeDashoffset={segment.offset}
+                                />
+                              ))}
+                            </svg>
+                            <div className="consultant-donut-center">
+                              <strong>{totalStageCount.toString().padStart(2, "0")}</strong>
+                              <span>leads</span>
+                            </div>
+                          </div>
+                          <div className="consultant-donut-legend">
+                            {stageSeries.map((stage, index) => (
+                              <div className="consultant-donut-legend-row" key={stage.label}>
+                                <span
+                                  className="consultant-donut-dot"
+                                  style={{ backgroundColor: donutSegments[index]?.color }}
+                                />
+                                <strong>{stage.label}</strong>
+                                <span>{stage.value.toString().padStart(2, "0")}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+
+                    <div className="consultant-list-panel">
+                      <div className="consultant-list-panel-header">
+                        <strong>Leads recentes</strong>
+                        <span>Últimas entradas</span>
+                      </div>
                       {consultantLeadsLoading ? (
                         <p className="result-cta-hint">Carregando leads da instância...</p>
-                      ) : consultantLeads.length === 0 ? (
+                      ) : recentLeads.length === 0 ? (
                         <p className="result-cta-hint">Ainda não há leads registrados para esta instância.</p>
                       ) : (
-                        pipelineColumns.map((column) => (
-                          <section className="consultant-pipeline-column" key={column.id}>
-                            <div className="consultant-pipeline-column-header">
-                              <div>
-                                <strong>{column.label}</strong>
-                                <span>{column.helper}</span>
+                        <div className="consultant-rows">
+                          {recentLeads.map((lead) => (
+                            <button className="consultant-row" key={lead.id} type="button" onClick={() => setSelectedLead(lead)}>
+                              <div className="consultant-row-main">
+                                <strong>{lead.company}</strong>
+                                <span>{lead.contact}</span>
                               </div>
-                              <small>{consultantLeads.filter((lead) => lead.status === column.id).length}</small>
-                            </div>
-
-                            <div className="consultant-pipeline-stack">
-                              {consultantLeads.filter((lead) => lead.status === column.id).length === 0 ? (
-                                <p className="result-cta-hint">Nenhum lead nesta etapa.</p>
-                              ) : (
-                                consultantLeads
-                                  .filter((lead) => lead.status === column.id)
-                                  .slice(0, 2)
-                                  .map((lead) => (
-                                    <button
-                                      className="consultant-pipeline-card"
-                                      key={lead.id}
-                                      type="button"
-                                      onClick={() => setSelectedLead(lead)}
-                                    >
-                                      <div className="consultant-pipeline-card-head">
-                                        <strong>{lead.company}</strong>
-                                        <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
-                                          {getLeadPriority(lead)}
-                                        </span>
-                                      </div>
-                                      <span>{lead.contact}</span>
-                                      <p>{lead.diagnosis}</p>
-                                      <small>{lead.objective}</small>
-                                    </button>
-                                  ))
-                              )}
-                            </div>
-                          </section>
-                        ))
+                              <span className="consultant-row-tag">{lead.status}</span>
+                              <span>{lead.updatedAt}</span>
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </section>
 
                   <section className="consultant-panel consultant-dashboard-side">
                     <div className="consultant-panel-header">
-                      <h2>Próxima ação</h2>
-                      <span>Lead e agenda</span>
+                      <h2>Notificações e agenda</h2>
+                      <span>Hoje</span>
                     </div>
                     <div className="consultant-dashboard-side-grid">
                       {activeLead ? (
@@ -429,7 +590,7 @@ export function ConsultorScreen({
                         ) : (
                           agendaPreview.map((item) => (
                             <article className="consultant-agenda-card" key={item.id}>
-                              <div>
+                              <div className="consultant-agenda-main">
                                 <strong>{item.title}</strong>
                                 <span>{item.company}</span>
                               </div>
@@ -440,6 +601,15 @@ export function ConsultorScreen({
                             </article>
                           ))
                         )}
+                      </div>
+
+                      <div className="consultant-tip-card">
+                        <strong>Melhor ação agora</strong>
+                        <p>
+                          {activeLead
+                            ? `Responder ${activeLead.contact} com foco em ${activeLead.objective.toLowerCase()}.`
+                            : "Assim que entrar um lead, a próxima melhor ação aparece aqui."}
+                        </p>
                       </div>
                     </div>
                   </section>
@@ -459,25 +629,23 @@ export function ConsultorScreen({
                   <p className="result-cta-hint">Ainda não há leads registrados para esta instância.</p>
                 ) : (
                   <div className="consultant-pipeline-board">
-                    {pipelineColumns.map((column) => (
+                    {leadsByStatus.map((column) => (
                       <section className="consultant-pipeline-column" key={column.id}>
                         <div className="consultant-pipeline-column-header">
                           <div>
                             <strong>{column.label}</strong>
                             <span>{column.helper}</span>
                           </div>
-                          <small>{consultantLeads.filter((lead) => lead.status === column.id).length}</small>
+                          <small>{column.leads.length}</small>
                         </div>
 
                         <div className="consultant-pipeline-stack">
-                          {consultantLeads.filter((lead) => lead.status === column.id).length === 0 ? (
+                          {column.leads.length === 0 ? (
                             <p className="result-cta-hint">Nenhum lead nesta etapa.</p>
                           ) : (
-                            consultantLeads
-                              .filter((lead) => lead.status === column.id)
-                              .map((lead) => (
+                            column.leads.map((lead) => (
                                 <button
-                                  className="consultant-pipeline-card consultant-pipeline-card-detailed"
+                                  className="consultant-pipeline-card"
                                   key={lead.id}
                                   type="button"
                                   onClick={() => setSelectedLead(lead)}
@@ -494,12 +662,11 @@ export function ConsultorScreen({
                                   </div>
                                   <p>{lead.diagnosis}</p>
                                   <div className="consultant-pipeline-card-tags">
-                                    <span className="consultant-context-chip">{lead.objective}</span>
                                     <span className="consultant-context-chip">{lead.recommendedCategory}</span>
                                   </div>
                                   <div className="consultant-pipeline-card-footer">
                                     <small>{lead.updatedAt}</small>
-                                    <small>{lead.phone}</small>
+                                    <small>{lead.objective}</small>
                                   </div>
                                 </button>
                               ))
@@ -596,23 +763,12 @@ export function ConsultorScreen({
                   </div>
                   <div className="consultant-theme-switcher">
                     <div>
-                      <span>Modo da interface</span>
-                      <strong>{consultantTheme === "light" ? "Light padrão" : "Dark alternativo"}</strong>
+                      <span>Tema global da plataforma</span>
+                      <strong>{themeMode === "light" ? "Light ativo" : "Dark ativo"}</strong>
                     </div>
                     <div className="consultant-theme-actions">
-                      <button
-                        className={consultantTheme === "light" ? "consultant-theme-button active" : "consultant-theme-button"}
-                        type="button"
-                        onClick={() => setConsultantTheme("light")}
-                      >
-                        Light
-                      </button>
-                      <button
-                        className={consultantTheme === "dark" ? "consultant-theme-button active" : "consultant-theme-button"}
-                        type="button"
-                        onClick={() => setConsultantTheme("dark")}
-                      >
-                        Dark
+                      <button className="consultant-theme-button active" type="button" onClick={onToggleTheme}>
+                        {themeMode === "light" ? "Trocar para dark" : "Trocar para light"}
                       </button>
                     </div>
                   </div>
