@@ -31,6 +31,7 @@ import {
   inferArea,
 } from "./lib/diagnosis";
 import { findOptionLabel, formatCategoryLabel, toStatusClassName } from "./lib/formatters";
+import { trackEvent } from "./lib/repositories/eventsRepository";
 import { createLead } from "./lib/repositories/leadsRepository";
 import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
 import { ExploreScreen } from "./features/explore/ExploreScreen";
@@ -191,6 +192,13 @@ function App() {
       ...previous,
       challenge: challenge ?? previous.challenge,
     }));
+    void trackEvent({
+      event_name: "diagnosis_started",
+      screen: "landing",
+      metadata: {
+        has_challenge: Boolean(challenge ?? formData.challenge),
+      },
+    });
     setScreen("quiz");
     setCurrentStep(0);
     setHasUnlockedWhatsapp(false);
@@ -228,6 +236,14 @@ function App() {
     if (!canContinue) {
       return;
     }
+
+    void trackEvent({
+      event_name: "quiz_step_completed",
+      screen: "quiz",
+      metadata: {
+        step: currentStep + 1,
+      },
+    });
 
     if (currentStep < 5) {
       setCurrentStep((step) => step + 1);
@@ -312,6 +328,14 @@ function App() {
     }
 
     const timer = window.setTimeout(() => {
+      void trackEvent({
+        event_name: "diagnosis_completed",
+        screen: "loading",
+        metadata: {
+          inferred_area: inferredArea,
+          recommended_category: preferredExploreCategory,
+        },
+      });
       setActiveExploreCategory(preferredExploreCategory);
       setExploreQuery(formData.challenge);
       setIsPersonalizedExplore(true);
@@ -337,6 +361,13 @@ function App() {
   const openContactModal = (target: ContactTarget) => {
     setContactTarget(target);
     setContactRequestError(null);
+    void trackEvent({
+      event_name: "contact_modal_opened",
+      screen: "result",
+      metadata: {
+        specialist_name: target.name,
+      },
+    });
     setIsContactModalOpen(true);
   };
 
@@ -384,6 +415,13 @@ function App() {
     });
 
     if (!leadResult.success) {
+      void trackEvent({
+        event_name: "lead_submit_error",
+        screen: "result_modal",
+        metadata: {
+          specialist_name: contactTarget.name,
+        },
+      });
       setContactRequestError("Não conseguimos salvar seu contato agora. Tente novamente em instantes.");
       return;
     }
@@ -407,6 +445,14 @@ function App() {
 
     const url = `${contactTarget.whatsapp}?text=${encodeURIComponent(message)}`;
     window.localStorage.setItem("rsn-last-whatsapp-url", url);
+    void trackEvent({
+      event_name: "lead_submit_success",
+      screen: "result_modal",
+      metadata: {
+        lead_id: leadResult.data.id,
+        specialist_name: contactTarget.name,
+      },
+    });
     setContactRequestError(null);
     setHasUnlockedWhatsapp(true);
     setIsContactModalOpen(false);
@@ -430,6 +476,14 @@ function App() {
       )}`;
 
     const url = unlockedUrl;
+    void trackEvent({
+      event_name: "whatsapp_opened",
+      screen: "result",
+      metadata: {
+        specialist_name: specialist.name,
+        has_unlocked_whatsapp: hasUnlockedWhatsapp,
+      },
+    });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
