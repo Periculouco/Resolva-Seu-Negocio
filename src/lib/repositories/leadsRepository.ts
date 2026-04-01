@@ -16,6 +16,11 @@ type RepositoryError = {
 
 type RepositoryResult<T> = Promise<RepositorySuccess<T> | RepositoryError>;
 
+/** Insert público não usa `.select()` porque RLS de `leads` não permite SELECT para `anon` na linha inserida. */
+export type CreateLeadData = {
+  id: null;
+};
+
 function normalizeInstanceSlug(instanceSlug: string) {
   return instanceSlug.trim();
 }
@@ -28,12 +33,8 @@ function buildError(message: string): RepositoryError {
   };
 }
 
-export async function createLead(payload: LeadInsert): RepositoryResult<LeadRow> {
-  const { data, error } = await supabase
-    .from("leads")
-    .insert(payload)
-    .select("*")
-    .single<LeadRow>();
+export async function createLead(payload: LeadInsert): RepositoryResult<CreateLeadData> {
+  const { error } = await supabase.from("leads").insert(payload);
 
   if (error) {
     return buildError(error.message);
@@ -41,7 +42,7 @@ export async function createLead(payload: LeadInsert): RepositoryResult<LeadRow>
 
   return {
     success: true,
-    data,
+    data: { id: null },
     error: null,
   };
 }

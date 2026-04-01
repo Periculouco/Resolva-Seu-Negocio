@@ -509,15 +509,6 @@ function App() {
     setIsContactModalOpen(false);
   };
 
-  const toPartnerInstanceSlug = (value: string) =>
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
   const submitContactRequest = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -528,7 +519,7 @@ function App() {
     const primaryGoalLabel = findOptionLabel(primaryGoalOptions, formData.primaryGoal);
     const currentBottleneckLabel = findOptionLabel(currentBottleneckOptions, formData.currentBottleneck);
     const leadResult = await createLead({
-      partner_instance_slug: toPartnerInstanceSlug(contactTarget.name),
+      partner_instance_slug: specialist.partnerInstanceSlug,
       company: null,
       contact_name: formData.name,
       contact_email: formData.email,
@@ -582,7 +573,6 @@ function App() {
       event_name: "lead_submit_success",
       screen: "result_modal",
       metadata: {
-        lead_id: leadResult.data.id,
         specialist_name: contactTarget.name,
       },
     });
