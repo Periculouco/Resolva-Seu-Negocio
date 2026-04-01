@@ -241,29 +241,35 @@ export function ConsultorScreen({
           <div className="consultant-main">
             <div className="consultant-header">
               <div>
-                <p className="section-kicker">CRM do parceiro</p>
+                <p className="section-kicker">Pipeline do parceiro</p>
                 <h1>
                   {consultantSection === "dashboard"
-                    ? "Visão geral do comercial"
+                    ? "Dashboard comercial"
                     : consultantSection === "leads"
-                      ? "Leads e diagnósticos"
+                      ? "Pipeline de leads"
                       : consultantSection === "agenda"
-                        ? "Agenda e disponibilidade"
-                        : "Perfil e operação do parceiro"}
+                        ? "Agenda comercial"
+                        : "Configurações do parceiro"}
                 </h1>
                 <p>
                   {consultantSection === "dashboard"
-                    ? "Uma leitura rápida da operação comercial do parceiro, com dados do diagnóstico e status dos leads."
+                    ? "Visão rápida do funil, da agenda e das próximas ações."
                     : consultantSection === "leads"
-                      ? "Acompanhe cada lead com contexto completo de diagnóstico, momento do negócio e objetivo principal."
+                      ? "Abra os cards para ver contexto, quiz e informações de abordagem."
                       : consultantSection === "agenda"
-                        ? "Controle disponibilidade, próximos slots e reuniões quentes vindas do diagnóstico."
-                        : "Configure dados públicos do parceiro, equipe comercial e regras de atendimento."}
+                        ? "Controle reuniões, disponibilidade e próximos slots."
+                        : "Ajuste informações públicas e base operacional do parceiro."}
                 </p>
               </div>
-              <button className="ghost-button" type="button" onClick={onConsultantLogout}>
-                Sair da instância
-              </button>
+              <div className="consultant-header-actions">
+                <div className="consultant-header-badge">
+                  <span>Pipeline ativo</span>
+                  <strong>{openPipelineCount.toString().padStart(2, "0")}</strong>
+                </div>
+                <button className="ghost-button" type="button" onClick={onConsultantLogout}>
+                  Sair da instância
+                </button>
+              </div>
             </div>
 
             {consultantSection === "dashboard" && (
@@ -299,7 +305,7 @@ export function ConsultorScreen({
                   <section className="consultant-panel">
                     <div className="consultant-panel-header">
                       <h2>Pipeline comercial</h2>
-                      <span>Clique no card para abrir o lead com mais contexto</span>
+                      <span>Board por etapa</span>
                     </div>
                     <div className="consultant-pipeline-board consultant-pipeline-preview">
                       {consultantLeadsLoading ? (
@@ -354,8 +360,8 @@ export function ConsultorScreen({
 
                   <section className="consultant-panel">
                     <div className="consultant-panel-header">
-                      <h2>Agenda do time</h2>
-                      <span>Organize follow-up e passagem para reunião</span>
+                      <h2>Agenda e próximos slots</h2>
+                      <span>Reuniões em andamento</span>
                     </div>
                     <div className="consultant-agenda-list">
                       {consultantAgendaLoading ? (
@@ -446,8 +452,8 @@ export function ConsultorScreen({
               <div className="consultant-panels">
                 <section className="consultant-panel">
                   <div className="consultant-panel-header">
-                    <h2>Disponibilidade padrão</h2>
-                    <span>Base para reunião quente</span>
+                    <h2>Disponibilidade</h2>
+                    <span>Base da agenda</span>
                   </div>
                   <div className="consultant-availability-grid">
                     {[
@@ -466,7 +472,7 @@ export function ConsultorScreen({
                 <section className="consultant-panel">
                   <div className="consultant-panel-header">
                     <h2>Reuniões marcadas</h2>
-                    <span>Fluxo rápido para SDRs</span>
+                    <span>Agenda confirmada</span>
                   </div>
                   <div className="consultant-agenda-list">
                     {consultantAgendaLoading ? (
@@ -496,8 +502,8 @@ export function ConsultorScreen({
               <div className="consultant-panels">
                 <section className="consultant-panel">
                   <div className="consultant-panel-header">
-                    <h2>Perfil público do parceiro</h2>
-                    <span>Dados exibidos na recomendação</span>
+                    <h2>Dados públicos do parceiro</h2>
+                    <span>Informações exibidas ao lead</span>
                   </div>
                   <div className="consultant-profile-grid">
                     <div>
@@ -521,15 +527,13 @@ export function ConsultorScreen({
 
                 <section className="consultant-panel">
                   <div className="consultant-panel-header">
-                    <h2>Recomendação de stack</h2>
-                    <span>Base recomendada para este produto</span>
+                    <h2>Base operacional</h2>
+                    <span>Estrutura atual do produto</span>
                   </div>
                   <div className="consultant-recommendation-copy">
-                    <strong>Recomendação: Supabase</strong>
+                    <strong>Stack atual: Supabase</strong>
                     <p>
-                      Para esse produto, Supabase faz mais sentido que Railway porque reduz tempo de implementação,
-                      entrega autenticação pronta para parceiros, Postgres gerenciado, RLS para separar instâncias,
-                      storage e edge functions no mesmo stack.
+                      Auth, Postgres, RLS e dados operacionais do parceiro ficam concentrados no mesmo stack.
                     </p>
                     <ul>
                       <li>Auth para parceiros e equipe comercial</li>
