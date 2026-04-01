@@ -2972,94 +2972,94 @@ button {
 .consultant-pipeline-board {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(280px, 280px);
-  gap: 12px;
+  grid-auto-columns: minmax(236px, 236px);
+  gap: 8px;
   align-items: start;
   overflow-x: auto;
-  padding: 4px 4px 10px;
+  padding: 0 0 6px;
   scrollbar-width: thin;
 }
 
 .consultant-pipeline-preview {
-  grid-auto-columns: minmax(220px, 220px);
+  grid-auto-columns: minmax(204px, 204px);
 }
 
 .consultant-pipeline-column {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--consultant-surface-alt) 88%, transparent);
+  gap: 8px;
+  padding: 4px 4px 6px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--consultant-surface-alt) 32%, transparent);
   border: 1px solid var(--consultant-panel-border);
-  min-height: 620px;
-  max-height: 620px;
+  min-height: 500px;
+  max-height: 500px;
   overflow: hidden;
 }
 
 .consultant-theme-light .consultant-pipeline-column {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 .consultant-pipeline-column-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 2px 2px 0;
+  gap: 8px;
+  padding: 0 2px;
 }
 
 .consultant-pipeline-column-header div {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .consultant-pipeline-column-header strong {
   color: var(--consultant-text);
-  font-size: 0.98rem;
+  font-size: 0.86rem;
 }
 
 .consultant-pipeline-column-header span,
 .consultant-pipeline-column-header small {
   color: var(--consultant-muted);
-  font-size: 0.78rem;
+  font-size: 0.66rem;
 }
 
 .consultant-pipeline-stack {
   display: grid;
   grid-auto-rows: min-content;
-  gap: 10px;
+  gap: 6px;
   align-content: start;
   align-items: start;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 2px;
 }
 
 .consultant-kanban-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 0 0 2px;
+  gap: 10px;
+  padding: 0;
 }
 
 .consultant-kanban-toolbar-group,
 .consultant-kanban-toolbar-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .consultant-kanban-search {
   display: flex;
-  min-width: 210px;
+  min-width: 184px;
 }
 
 .consultant-kanban-search input {
   width: 100%;
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 10px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
   border: 1px solid var(--consultant-panel-border);
   background: var(--consultant-surface);
   color: var(--consultant-text);
@@ -3071,9 +3071,9 @@ button {
 
 .consultant-toolbar-icon,
 .consultant-toolbar-select {
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 10px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
   border: 1px solid var(--consultant-panel-border);
   background: var(--consultant-surface);
   color: var(--consultant-text);
@@ -3081,8 +3081,8 @@ button {
 }
 
 .consultant-toolbar-icon {
-  min-width: 38px;
-  font-size: 0.84rem;
+  min-width: 34px;
+  font-size: 0.78rem;
   font-weight: 800;
 }
 
@@ -3094,20 +3094,20 @@ button {
 
 .consultant-toolbar-total {
   color: var(--consultant-muted);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
 }
 
 .consultant-pipeline-card {
   display: grid;
-  gap: 8px;
+  gap: 5px;
   width: 100%;
-  padding: 10px 10px 9px;
-  border-radius: 10px;
+  padding: 7px 7px 6px;
+  border-radius: 7px;
   border: 1px solid var(--consultant-card-border);
   background: var(--consultant-card-bg);
   text-align: left;
   color: inherit;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.045);
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
   position: relative;
   overflow: hidden;
@@ -3116,7 +3116,7 @@ button {
 .consultant-pipeline-card:hover {
   transform: translateY(-1px);
   border-color: rgba(249, 115, 22, 0.24);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.07);
 }
 
 .consultant-pipeline-card strong,
@@ -3136,7 +3136,7 @@ button {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
 }
 
 .consultant-pipeline-card-accent-novo {
@@ -3163,8 +3163,8 @@ button {
 .consultant-pipeline-card p {
   color: var(--consultant-text);
   font-weight: 600;
-  line-height: 1.35;
-  font-size: 0.92rem;
+  line-height: 1.24;
+  font-size: 0.8rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -3175,39 +3175,39 @@ button {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .consultant-pipeline-card-head strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.98rem;
+  font-size: 0.84rem;
 }
 
 .consultant-pipeline-card-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   min-width: 0;
 }
 
 .consultant-pipeline-card-avatar {
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 999px;
   background: rgba(249, 115, 22, 0.12);
   color: var(--consultant-accent-strong);
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   font-weight: 800;
 }
 
 .consultant-pipeline-card-person {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .consultant-pipeline-card-person span,
@@ -3220,21 +3220,21 @@ button {
 
 .consultant-pipeline-card-person span {
   color: var(--consultant-muted);
-  font-size: 0.84rem;
+  font-size: 0.72rem;
 }
 
 .consultant-pipeline-card-person small,
 .consultant-pipeline-card-meta {
   color: var(--consultant-soft);
-  font-size: 0.74rem;
+  font-size: 0.64rem;
 }
 
 .consultant-pipeline-card-meta {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  line-height: 1.35;
+  line-height: 1.2;
 }
 
 .consultant-pipeline-card-tags {
@@ -3247,15 +3247,15 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding-top: 2px;
+  gap: 6px;
+  padding-top: 1px;
 }
 
 .consultant-pipeline-card-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
   flex-wrap: wrap;
 }
@@ -3263,18 +3263,19 @@ button {
 .consultant-pipeline-card-quick-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-top: 2px;
+  gap: 4px;
+  padding-top: 0;
+  flex-wrap: wrap;
 }
 
 .consultant-card-action {
-  min-height: 26px;
-  padding: 0 8px;
-  border-radius: 8px;
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: 7px;
   border: 1px solid var(--consultant-panel-border);
   background: color-mix(in srgb, var(--consultant-surface) 92%, transparent);
   color: var(--consultant-text);
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   font-weight: 700;
 }
 
@@ -3845,10 +3846,10 @@ button {
 .consultant-priority-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 22px;
+  padding: 0 8px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 700;
   border: 1px solid rgba(255, 236, 214, 0.08);
   white-space: nowrap;
@@ -4021,10 +4022,10 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 22px;
+  padding: 0 8px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 700;
   border: 1px solid rgba(44, 62, 80, 0.08);
   background: rgba(255, 255, 255, 0.96);
@@ -4254,7 +4255,7 @@ button {
 
   .consultant-pipeline-board,
   .consultant-pipeline-preview {
-    grid-auto-columns: minmax(248px, 248px);
+    grid-auto-columns: minmax(228px, 228px);
   }
 
   .consultant-header h1 {
@@ -4280,7 +4281,7 @@ button {
 
   .consultant-pipeline-board,
   .consultant-pipeline-preview {
-    grid-auto-columns: minmax(224px, 224px);
+    grid-auto-columns: minmax(212px, 212px);
   }
 
   .consultant-kanban-toolbar-group,

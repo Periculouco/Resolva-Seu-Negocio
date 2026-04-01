@@ -830,16 +830,12 @@ export function ConsultorScreen({
                                     <small>{lead.role}</small>
                                   </div>
                                   <p>{lead.diagnosis}</p>
-                                  <small className="consultant-pipeline-card-meta">
-                                    {getLeadPreview(lead)}
-                                  </small>
+                                  <small className="consultant-pipeline-card-meta">{getLeadPreview(lead)}</small>
                                   <div className="consultant-pipeline-card-footer">
                                     <small>{lead.updatedAt}</small>
                                     <div className="consultant-pipeline-card-actions">
                                       <span className="consultant-context-chip">{lead.recommendedCategory}</span>
-                                      <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
-                                        {getLeadPriority(lead)}
-                                      </span>
+                                      <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>{getLeadPriority(lead)}</span>
                                     </div>
                                   </div>
                                   <div className="consultant-pipeline-card-quick-actions">
