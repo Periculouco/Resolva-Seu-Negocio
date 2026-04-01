@@ -70,6 +70,21 @@ export function ConsultorScreen({
   const agendaPreview = consultantAgenda.slice(0, 3);
   const recentLeads = consultantLeads.slice(0, 5);
 
+  const getLeadPreview = (lead: ConsultantLead) => {
+    const summary = lead.diagnosisSummary?.trim() || lead.urgency?.trim() || lead.challenge?.trim() || "";
+    return summary.length > 78 ? `${summary.slice(0, 78).trim()}...` : summary;
+  };
+
+  const getLeadInitials = (lead: ConsultantLead) => {
+    const base = lead.company || lead.contact;
+    return base
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
+  };
+
   const getLeadPriority = (lead: ConsultantLead) => {
     const urgency = lead.urgency.toLowerCase();
 
@@ -623,6 +638,27 @@ export function ConsultorScreen({
                   <h2>Kanban comercial</h2>
                   <span>{consultantLeads.length} leads no pipeline</span>
                 </div>
+                <div className="consultant-kanban-toolbar">
+                  <div className="consultant-kanban-toolbar-group">
+                    <button className="consultant-toolbar-icon active" type="button" aria-label="Visualização em kanban">
+                      |||
+                    </button>
+                    <button className="consultant-toolbar-icon" type="button" aria-label="Visualização em lista">
+                      ≣
+                    </button>
+                    <button className="consultant-toolbar-icon" type="button" aria-label="Atualizar pipeline">
+                      ↻
+                    </button>
+                  </div>
+                  <div className="consultant-kanban-toolbar-meta">
+                    <span className="consultant-toolbar-total">
+                      {openPipelineCount.toString().padStart(2, "0")} ativos · {conversionRate}% conversão
+                    </span>
+                    <button className="consultant-toolbar-select" type="button">
+                      Pipeline comercial
+                    </button>
+                  </div>
+                </div>
                 {consultantLeadsLoading ? (
                   <p className="result-cta-hint">Carregando leads da instância...</p>
                 ) : consultantLeads.length === 0 ? (
@@ -650,8 +686,14 @@ export function ConsultorScreen({
                                   type="button"
                                   onClick={() => setSelectedLead(lead)}
                                 >
+                                  <span
+                                    className={`consultant-pipeline-card-accent consultant-pipeline-card-accent-${toStatusClassName(lead.status)}`}
+                                  />
                                   <div className="consultant-pipeline-card-head">
-                                    <strong>{lead.company}</strong>
+                                    <div className="consultant-pipeline-card-brand">
+                                      <span className="consultant-pipeline-card-avatar">{getLeadInitials(lead)}</span>
+                                      <strong>{lead.company}</strong>
+                                    </div>
                                     <span className={`status-pill status-${toStatusClassName(lead.status)}`}>
                                       {lead.status}
                                     </span>
@@ -662,13 +704,16 @@ export function ConsultorScreen({
                                   </div>
                                   <p>{lead.diagnosis}</p>
                                   <small className="consultant-pipeline-card-meta">
-                                    {lead.recommendedCategory} · {lead.objective}
+                                    {getLeadPreview(lead)}
                                   </small>
                                   <div className="consultant-pipeline-card-footer">
                                     <small>{lead.updatedAt}</small>
-                                    <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
-                                      {getLeadPriority(lead)}
-                                    </span>
+                                    <div className="consultant-pipeline-card-actions">
+                                      <span className="consultant-context-chip">{lead.recommendedCategory}</span>
+                                      <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
+                                        {getLeadPriority(lead)}
+                                      </span>
+                                    </div>
                                   </div>
                                 </button>
                               ))
