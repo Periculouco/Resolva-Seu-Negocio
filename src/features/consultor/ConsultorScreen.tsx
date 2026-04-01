@@ -375,7 +375,7 @@ export function ConsultorScreen({
                   {consultantSection === "dashboard"
                     ? "Dashboard comercial"
                     : consultantSection === "leads"
-                      ? "Gerenciar leads"
+                      ? "Pipeline de leads"
                       : consultantSection === "agenda"
                         ? "Agenda e disponibilidade"
                         : "Perfil operacional"}
@@ -384,7 +384,7 @@ export function ConsultorScreen({
                   {consultantSection === "dashboard"
                     ? "KPIs, pipeline e ações do dia."
                     : consultantSection === "leads"
-                      ? "Board por etapa com abertura rápida do lead."
+                      ? "Triagem rápida por etapa."
                       : consultantSection === "agenda"
                         ? "Reuniões e disponibilidade."
                         : "Dados exibidos ao lead e estrutura interna do parceiro."}
@@ -621,7 +621,7 @@ export function ConsultorScreen({
               <section className="consultant-data-table consultant-leads-board">
                 <div className="consultant-panel-header">
                   <h2>Kanban comercial</h2>
-                  <span>Abra o card para ver quiz, diagnóstico e abordagem</span>
+                  <span>{consultantLeads.length} leads no pipeline</span>
                 </div>
                 {consultantLeadsLoading ? (
                   <p className="result-cta-hint">Carregando leads da instância...</p>
@@ -652,8 +652,8 @@ export function ConsultorScreen({
                                 >
                                   <div className="consultant-pipeline-card-head">
                                     <strong>{lead.company}</strong>
-                                    <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
-                                      {getLeadPriority(lead)}
+                                    <span className={`status-pill status-${toStatusClassName(lead.status)}`}>
+                                      {lead.status}
                                     </span>
                                   </div>
                                   <div className="consultant-pipeline-card-person">
@@ -661,12 +661,14 @@ export function ConsultorScreen({
                                     <small>{lead.role}</small>
                                   </div>
                                   <p>{lead.diagnosis}</p>
-                                  <div className="consultant-pipeline-card-tags">
-                                    <span className="consultant-context-chip">{lead.recommendedCategory}</span>
-                                  </div>
+                                  <small className="consultant-pipeline-card-meta">
+                                    {lead.recommendedCategory} · {lead.objective}
+                                  </small>
                                   <div className="consultant-pipeline-card-footer">
                                     <small>{lead.updatedAt}</small>
-                                    <small>{lead.objective}</small>
+                                    <span className={`consultant-priority-chip ${getLeadPriorityClassName(lead)}`}>
+                                      {getLeadPriority(lead)}
+                                    </span>
                                   </div>
                                 </button>
                               ))
