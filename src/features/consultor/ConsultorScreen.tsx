@@ -59,6 +59,15 @@ export function ConsultorScreen({
 }: ConsultorScreenProps) {
   const [selectedLead, setSelectedLead] = useState<ConsultantLead | null>(null);
   const [kanbanSearch, setKanbanSearch] = useState("");
+  const [activeToolModal, setActiveToolModal] = useState<null | "pipeline" | "activity" | "quick-create" | "filters">(null);
+  const [activityLead, setActivityLead] = useState<ConsultantLead | null>(null);
+  const [pipelineNameDraft, setPipelineNameDraft] = useState("Pipeline comercial");
+  const [activityForm, setActivityForm] = useState({
+    title: "",
+    dueDate: "",
+    channel: "WhatsApp",
+    note: "",
+  });
   const nextMeeting = consultantAgenda[0] ?? null;
   const openPipelineCount = consultantLeads.filter((lead) => lead.status !== "Perdido").length;
   const contactedCount = consultantLeads.filter((lead) => lead.status === "Em contato").length;
@@ -140,6 +149,22 @@ export function ConsultorScreen({
 
   const stopLeadModalPropagation: MouseEventHandler<HTMLElement> = (event) => {
     event.stopPropagation();
+  };
+
+  const openActivityModal = (lead?: ConsultantLead) => {
+    setActivityLead(lead ?? activeLead ?? null);
+    setActivityForm({
+      title: lead ? `Follow-up com ${lead.contact}` : "Novo follow-up",
+      dueDate: "",
+      channel: "WhatsApp",
+      note: lead ? `Retomar contato com foco em ${lead.objective.toLowerCase()}.` : "",
+    });
+    setActiveToolModal("activity");
+  };
+
+  const closeToolModal = () => {
+    setActiveToolModal(null);
+    setActivityLead(null);
   };
 
   const dailyLeadSeries = useMemo(() => {
@@ -421,16 +446,31 @@ export function ConsultorScreen({
                 </label>
               </div>
               <div className="consultant-tool-header-right">
-                <button className="consultant-tool-chip" type="button">
+                <button className="consultant-tool-chip" type="button" onClick={() => setActiveToolModal("pipeline")}>
                   Pipeline comercial
                 </button>
-                <button className="consultant-tool-icon" type="button" aria-label="Filtro rápido">
+                <button
+                  className="consultant-tool-icon"
+                  type="button"
+                  aria-label="Filtro rápido"
+                  onClick={() => setActiveToolModal("filters")}
+                >
                   ⌯
                 </button>
-                <button className="consultant-tool-icon" type="button" aria-label="Notificações">
+                <button
+                  className="consultant-tool-icon"
+                  type="button"
+                  aria-label="Ações rápidas"
+                  onClick={() => setActiveToolModal("quick-create")}
+                >
                   ◉
                 </button>
-                <button className="consultant-tool-icon" type="button" aria-label="Adicionar">
+                <button
+                  className="consultant-tool-icon"
+                  type="button"
+                  aria-label="Adicionar"
+                  onClick={() => setActiveToolModal("quick-create")}
+                >
                   ＋
                 </button>
               </div>
@@ -738,10 +778,10 @@ export function ConsultorScreen({
                     <span className="consultant-toolbar-total">
                       {openPipelineCount.toString().padStart(2, "0")} ativos · {conversionRate}% conversão
                     </span>
-                    <button className="consultant-toolbar-select" type="button">
+                    <button className="consultant-toolbar-select" type="button" onClick={() => setActiveToolModal("pipeline")}>
                       Pipeline comercial
                     </button>
-                    <button className="consultant-toolbar-select" type="button">
+                    <button className="consultant-toolbar-select" type="button" onClick={() => setActiveToolModal("filters")}>
                       Todos os leads
                     </button>
                   </div>
@@ -812,6 +852,16 @@ export function ConsultorScreen({
                                       }}
                                     >
                                       WhatsApp
+                                    </button>
+                                    <button
+                                      className="consultant-card-action"
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openActivityModal(lead);
+                                      }}
+                                    >
+                                      Atividade
                                     </button>
                                     <button
                                       className="consultant-card-action"
@@ -1011,6 +1061,172 @@ export function ConsultorScreen({
                 <span>Especialista recomendado: {selectedLead.recommendedSpecialist}</span>
               </div>
             </div>
+          </section>
+        </div>
+      )}
+
+      {activeToolModal && (
+        <div className="modal-overlay" role="presentation" onClick={closeToolModal}>
+          <section
+            className="contact-modal consultant-tool-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="consultant-tool-modal-title"
+            onClick={stopLeadModalPropagation}
+          >
+            <div className="contact-modal-header consultant-tool-modal-header">
+              <div>
+                <p className="section-kicker">Operação rápida</p>
+                <h2 id="consultant-tool-modal-title">
+                  {activeToolModal === "pipeline"
+                    ? "Configurar pipeline"
+                    : activeToolModal === "activity"
+                      ? "Criar atividade"
+                      : activeToolModal === "filters"
+                        ? "Filtros rápidos"
+                        : "Criar novo"}
+                </h2>
+                <p>
+                  {activeToolModal === "pipeline"
+                    ? "Organize o funil atual e o nome exibido no board."
+                    : activeToolModal === "activity"
+                      ? "Adicione um próximo passo para o lead em foco."
+                      : activeToolModal === "filters"
+                        ? "Refine a visualização do board como em um CRM."
+                        : "Escolha a próxima ação operacional do time."}
+                </p>
+              </div>
+              <button className="modal-close" type="button" onClick={closeToolModal} aria-label="Fechar modal">
+                ×
+              </button>
+            </div>
+
+            {activeToolModal === "pipeline" && (
+              <div className="consultant-tool-modal-grid">
+                <label className="consultant-tool-field">
+                  Nome do pipeline
+                  <input
+                    value={pipelineNameDraft}
+                    onChange={(event) => setPipelineNameDraft(event.target.value)}
+                    placeholder="Pipeline comercial"
+                  />
+                </label>
+                <div className="consultant-tool-summary-card">
+                  <strong>Etapas atuais</strong>
+                  <div className="consultant-tool-pill-list">
+                    {pipelineColumns.map((column) => (
+                      <span key={column.id} className="consultant-context-chip">
+                        {column.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="consultant-tool-modal-actions">
+                  <button className="consultant-card-action" type="button" onClick={closeToolModal}>
+                    Fechar
+                  </button>
+                  <button className="primary-button" type="button" onClick={closeToolModal}>
+                    Salvar pipeline
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeToolModal === "activity" && (
+              <div className="consultant-tool-modal-grid">
+                <div className="consultant-tool-summary-card">
+                  <strong>Lead da atividade</strong>
+                  <span>{activityLead ? `${activityLead.company} · ${activityLead.contact}` : "Lead em foco do board"}</span>
+                </div>
+                <label className="consultant-tool-field">
+                  Título
+                  <input
+                    value={activityForm.title}
+                    onChange={(event) => setActivityForm((current) => ({ ...current, title: event.target.value }))}
+                    placeholder="Ex: Follow-up comercial"
+                  />
+                </label>
+                <div className="consultant-tool-inline-fields">
+                  <label className="consultant-tool-field">
+                    Data
+                    <input
+                      type="date"
+                      value={activityForm.dueDate}
+                      onChange={(event) => setActivityForm((current) => ({ ...current, dueDate: event.target.value }))}
+                    />
+                  </label>
+                  <label className="consultant-tool-field">
+                    Canal
+                    <select
+                      value={activityForm.channel}
+                      onChange={(event) => setActivityForm((current) => ({ ...current, channel: event.target.value }))}
+                    >
+                      <option>WhatsApp</option>
+                      <option>Ligação</option>
+                      <option>Email</option>
+                      <option>Reunião</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="consultant-tool-field">
+                  Observação
+                  <textarea
+                    value={activityForm.note}
+                    onChange={(event) => setActivityForm((current) => ({ ...current, note: event.target.value }))}
+                    rows={4}
+                    placeholder="Contexto do próximo passo"
+                  />
+                </label>
+                <div className="consultant-tool-modal-actions">
+                  <button className="consultant-card-action" type="button" onClick={closeToolModal}>
+                    Cancelar
+                  </button>
+                  <button className="primary-button" type="button" onClick={closeToolModal}>
+                    Criar atividade
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeToolModal === "filters" && (
+              <div className="consultant-tool-modal-grid">
+                <div className="consultant-tool-summary-card">
+                  <strong>Filtrar board</strong>
+                  <div className="consultant-tool-pill-list">
+                    <span className="consultant-context-chip">Todos os leads</span>
+                    <span className="consultant-context-chip">Quentes</span>
+                    <span className="consultant-context-chip">Com atividade</span>
+                    <span className="consultant-context-chip">Sem retorno</span>
+                  </div>
+                </div>
+                <div className="consultant-tool-summary-card">
+                  <strong>Visualização ativa</strong>
+                  <span>Pipeline comercial · {visibleLeadCount} itens visíveis</span>
+                </div>
+                <div className="consultant-tool-modal-actions">
+                  <button className="consultant-card-action" type="button" onClick={closeToolModal}>
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeToolModal === "quick-create" && (
+              <div className="consultant-tool-quick-grid">
+                <button className="consultant-tool-quick-card" type="button" onClick={() => setActiveToolModal("activity")}>
+                  <strong>Nova atividade</strong>
+                  <span>Criar follow-up, ligação, email ou reunião.</span>
+                </button>
+                <button className="consultant-tool-quick-card" type="button" onClick={() => setActiveToolModal("pipeline")}>
+                  <strong>Novo funil</strong>
+                  <span>Preparar um pipeline novo para outra operação.</span>
+                </button>
+                <button className="consultant-tool-quick-card" type="button" onClick={() => setSelectedLead(activeLead)}>
+                  <strong>Abrir lead em foco</strong>
+                  <span>Ir direto para o lead mais urgente do board.</span>
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}

@@ -3278,6 +3278,104 @@ button {
   font-weight: 700;
 }
 
+.consultant-tool-modal {
+  width: min(720px, calc(100vw - 28px));
+  background: var(--consultant-surface);
+  border: 1px solid var(--consultant-panel-border);
+  box-shadow: 0 28px 64px rgba(49, 31, 20, 0.24);
+}
+
+.consultant-tool-modal-header p {
+  color: var(--consultant-muted);
+}
+
+.consultant-tool-modal-grid,
+.consultant-tool-quick-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.consultant-tool-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.consultant-tool-field {
+  display: grid;
+  gap: 8px;
+  color: var(--consultant-text);
+  font-weight: 600;
+}
+
+.consultant-tool-field input,
+.consultant-tool-field select,
+.consultant-tool-field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--consultant-panel-border);
+  background: var(--consultant-card-bg);
+  color: var(--consultant-text);
+}
+
+.consultant-tool-field textarea {
+  min-height: 112px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.consultant-tool-summary-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--consultant-card-bg);
+  border: 1px solid var(--consultant-card-border);
+}
+
+.consultant-tool-summary-card strong {
+  color: var(--consultant-text);
+}
+
+.consultant-tool-summary-card span {
+  color: var(--consultant-muted);
+}
+
+.consultant-tool-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consultant-tool-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.consultant-tool-quick-card {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--consultant-card-border);
+  background: var(--consultant-card-bg);
+  text-align: left;
+  color: inherit;
+}
+
+.consultant-tool-quick-card strong {
+  color: var(--consultant-text);
+}
+
+.consultant-tool-quick-card span {
+  color: var(--consultant-muted);
+}
+
 .consultant-panels {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4095,6 +4193,10 @@ button {
     flex-wrap: wrap;
   }
 
+  .consultant-tool-inline-fields {
+    grid-template-columns: 1fr;
+  }
+
   .numbers-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4188,6 +4290,11 @@ button {
 
   .consultant-kanban-search {
     min-width: 100%;
+  }
+
+  .consultant-tool-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .consultant-app-bar {
