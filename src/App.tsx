@@ -35,6 +35,7 @@ import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
 import { LandingScreen } from "./features/landing/LandingScreen";
 import { QuizScreen } from "./features/quiz/QuizScreen";
 import { ResultScreen } from "./features/result/ResultScreen";
+import { ContactModal } from "./features/shared/ContactModal";
 import type {
   ConsultantAgendaItem,
   ConsultantLead,
@@ -590,86 +591,14 @@ function App() {
         />
       )}
 
-      {isContactModalOpen && contactTarget && (
-        <div className="modal-overlay" role="presentation" onClick={closeContactModal}>
-          <section
-            className="contact-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="contact-modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="contact-modal-header">
-              <div>
-                <p className="section-kicker">Entrar em contato</p>
-                <h2 id="contact-modal-title">{contactTarget.name}</h2>
-                <p>{contactTarget.title}</p>
-              </div>
-              <button className="modal-close" type="button" onClick={closeContactModal} aria-label="Fechar modal">
-                ×
-              </button>
-            </div>
-
-            <form className="contact-modal-form" onSubmit={submitContactRequest}>
-              <label>
-                Nome completo
-                <input
-                  value={formData.name}
-                  onChange={(event) => updateField("name", event.target.value)}
-                  placeholder="Seu nome completo"
-                  required
-                />
-              </label>
-              <label>
-                Email
-                <input
-                  value={formData.email}
-                  onChange={(event) => updateField("email", event.target.value)}
-                  placeholder="voce@empresa.com"
-                  type="email"
-                  required
-                />
-              </label>
-              <label>
-                Telefone
-                <input
-                  value={formData.phone}
-                  onChange={(event) => updateField("phone", event.target.value)}
-                  placeholder="(85) 99999-9999"
-                  required
-                />
-              </label>
-              <label>
-                Cargo
-                <input
-                  value={formData.role}
-                  onChange={(event) => updateField("role", event.target.value)}
-                  placeholder="Ex: CEO, diretora comercial, operações"
-                  required
-                />
-              </label>
-              <label>
-                Dor principal
-                <textarea
-                  value={formData.mainPain}
-                  onChange={(event) => updateField("mainPain", event.target.value)}
-                  placeholder="Descreva em poucas palavras o que mais está travando seu negócio hoje"
-                  required
-                />
-              </label>
-
-              <div className="contact-modal-actions">
-                <button className="ghost-button" type="button" onClick={closeContactModal}>
-                  Cancelar
-                </button>
-                <button className="primary-button" type="submit">
-                  Enviar contato
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
-      )}
+      <ContactModal
+        isOpen={isContactModalOpen}
+        contactTarget={contactTarget}
+        formData={formData}
+        onClose={closeContactModal}
+        onSubmit={submitContactRequest}
+        onUpdateField={updateField}
+      />
     </div>
   );
 }
