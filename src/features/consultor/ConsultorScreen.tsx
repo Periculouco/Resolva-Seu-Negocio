@@ -343,6 +343,13 @@ export function ConsultorScreen({
           }
         >
           <aside className="consultant-sidebar">
+            <div className="consultant-sidebar-app-switcher" aria-hidden="true">
+              <span className="consultant-sidebar-app-logo">R</span>
+              <span className="consultant-sidebar-app-dot active" />
+              <span className="consultant-sidebar-app-dot" />
+              <span className="consultant-sidebar-app-dot" />
+            </div>
+
             <div className="consultant-sidebar-brand">
               <img src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
               <div>
@@ -358,10 +365,10 @@ export function ConsultorScreen({
 
             <div className="consultant-sidebar-nav">
               {[
-                { id: "dashboard", label: "Dashboard" },
-                { id: "leads", label: "Leads" },
-                { id: "agenda", label: "Agenda" },
-                { id: "perfil", label: "Perfil" },
+                { id: "dashboard", label: "Dashboard", icon: "◫" },
+                { id: "leads", label: "Leads", icon: "▥" },
+                { id: "agenda", label: "Agenda", icon: "◷" },
+                { id: "perfil", label: "Perfil", icon: "⚙" },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -369,6 +376,9 @@ export function ConsultorScreen({
                   type="button"
                   onClick={() => onConsultantSectionChange(item.id as ConsultantSection)}
                 >
+                  <span className="consultant-nav-icon" aria-hidden="true">
+                    {item.icon}
+                  </span>
                   {item.label}
                 </button>
               ))}
@@ -399,6 +409,33 @@ export function ConsultorScreen({
           </aside>
 
           <div className="consultant-main">
+            <div className="consultant-tool-header">
+              <div className="consultant-tool-header-left">
+                <div className="consultant-tool-header-title">
+                  <strong>Resolva CRM</strong>
+                  <span>Workspace comercial</span>
+                </div>
+                <label className="consultant-tool-search" aria-label="Busca global da ferramenta">
+                  <span aria-hidden="true">⌕</span>
+                  <input type="text" placeholder="Buscar lead, empresa, agenda ou atividade" readOnly value="" />
+                </label>
+              </div>
+              <div className="consultant-tool-header-right">
+                <button className="consultant-tool-chip" type="button">
+                  Pipeline comercial
+                </button>
+                <button className="consultant-tool-icon" type="button" aria-label="Filtro rápido">
+                  ⌯
+                </button>
+                <button className="consultant-tool-icon" type="button" aria-label="Notificações">
+                  ◉
+                </button>
+                <button className="consultant-tool-icon" type="button" aria-label="Adicionar">
+                  ＋
+                </button>
+              </div>
+            </div>
+
             <div className="consultant-app-bar">
               <div className="consultant-app-bar-copy">
                 <p className="section-kicker">Pipeline do parceiro</p>

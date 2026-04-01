@@ -2523,8 +2523,8 @@ button {
   --consultant-accent-strong: #ea5b0c;
   --consultant-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: 228px minmax(0, 1fr);
+  gap: 14px;
   padding-top: 0;
   align-items: start;
 }
@@ -2563,13 +2563,43 @@ button {
   position: sticky;
   top: 104px;
   display: grid;
-  gap: 16px;
+  gap: 14px;
   align-self: start;
-  padding: 22px;
+  padding: 16px;
   color: var(--consultant-sidebar-text);
   background: var(--consultant-sidebar-bg);
   border: 1px solid var(--consultant-sidebar-border);
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.consultant-sidebar-app-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.consultant-sidebar-app-logo {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ff8f3d, #ff6a00);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.consultant-sidebar-app-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.consultant-sidebar-app-dot.active {
+  background: var(--consultant-accent);
 }
 
 .consultant-sidebar-brand {
@@ -2602,8 +2632,8 @@ button {
 }
 
 .consultant-sidebar-brand img {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   object-fit: contain;
 }
 
@@ -2645,17 +2675,28 @@ button {
 
 .consultant-sidebar-nav {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .consultant-nav-link {
   min-height: 48px;
-  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 14px;
   border: 1px solid var(--consultant-nav-border);
   background: var(--consultant-nav-bg);
   text-align: left;
-  padding: 0 16px;
+  padding: 0 14px;
   transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.consultant-nav-icon {
+  width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+  color: inherit;
+  opacity: 0.78;
 }
 
 .consultant-nav-link:hover,
@@ -2691,8 +2732,8 @@ button {
 
 .consultant-main {
   display: grid;
-  gap: 18px;
-  padding: 16px;
+  gap: 12px;
+  padding: 12px;
   border-radius: 28px;
   background: var(--consultant-shell-bg);
   border: 1px solid var(--consultant-shell-border);
@@ -2702,6 +2743,83 @@ button {
 .consultant-theme-light .consultant-main {
   background:
     linear-gradient(180deg, rgba(251, 253, 255, 0.98), rgba(244, 248, 252, 0.98));
+}
+
+.consultant-tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: var(--consultant-appbar-bg);
+  border: 1px solid var(--consultant-appbar-border);
+}
+
+.consultant-tool-header-left,
+.consultant-tool-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.consultant-tool-header-title {
+  display: grid;
+  gap: 2px;
+  min-width: 128px;
+}
+
+.consultant-tool-header-title strong {
+  color: var(--consultant-text);
+  font-size: 0.95rem;
+}
+
+.consultant-tool-header-title span {
+  color: var(--consultant-muted);
+  font-size: 0.76rem;
+}
+
+.consultant-tool-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 360px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--consultant-panel-border);
+  background: var(--consultant-surface);
+  color: var(--consultant-muted);
+}
+
+.consultant-tool-search input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--consultant-text);
+  outline: none;
+}
+
+.consultant-tool-search input::placeholder {
+  color: var(--consultant-muted);
+}
+
+.consultant-tool-chip,
+.consultant-tool-icon {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--consultant-panel-border);
+  background: var(--consultant-surface);
+  color: var(--consultant-text);
+}
+
+.consultant-tool-chip {
+  padding: 0 12px;
+}
+
+.consultant-tool-icon {
+  min-width: 38px;
+  padding: 0;
 }
 
 .consultant-app-bar,
@@ -2716,7 +2834,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 18px;
+  padding: 10px 14px;
   background: var(--consultant-appbar-bg);
   border: 1px solid var(--consultant-appbar-border);
 }
@@ -2772,7 +2890,7 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 4px 6px 2px;
+  padding: 2px 4px 0;
 }
 
 .consultant-toolbar {
@@ -2782,8 +2900,8 @@ button {
 }
 
 .consultant-toolbar-button {
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   border-radius: 12px;
   border: 1px solid var(--consultant-panel-border);
   background: var(--consultant-surface);
@@ -3866,6 +3984,20 @@ button {
     position: static;
   }
 
+  .consultant-tool-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .consultant-tool-header-left,
+  .consultant-tool-header-right {
+    flex-wrap: wrap;
+  }
+
+  .consultant-tool-search {
+    min-width: 100%;
+  }
+
   .loading-steps {
     grid-template-columns: 1fr;
   }
@@ -3937,6 +4069,11 @@ button {
   .consultant-app-bar-meta {
     width: 100%;
     grid-template-columns: 1fr;
+  }
+
+  .consultant-tool-header-left,
+  .consultant-tool-header-right {
+    width: 100%;
   }
 
   .consultant-toolbar {
