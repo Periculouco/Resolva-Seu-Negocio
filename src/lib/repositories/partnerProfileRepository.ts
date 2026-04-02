@@ -46,7 +46,9 @@ export async function getCurrentPartnerProfile(): RepositoryResult<PartnerProfil
     .from("partner_profiles")
     .select("*")
     .eq("user_id", user.id)
-    .maybeSingle<PartnerProfileRow>();
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .returns<PartnerProfileRow[]>();
 
   if (error) {
     return buildError(error.message);
@@ -54,7 +56,7 @@ export async function getCurrentPartnerProfile(): RepositoryResult<PartnerProfil
 
   return {
     success: true,
-    data,
+    data: data[0] ?? null,
     error: null,
   };
 }
@@ -81,12 +83,30 @@ export async function updateCurrentPartnerPipelineName(
     return buildError("pipelineName is required");
   }
 
+  const { data: profiles, error: profileError } = await supabase
+    .from("partner_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .returns<PartnerProfileRow[]>();
+
+  if (profileError) {
+    return buildError(profileError.message);
+  }
+
+  const currentProfile = profiles[0];
+
+  if (!currentProfile) {
+    return buildError("Perfil do parceiro não encontrado.");
+  }
+
   const { data, error } = await supabase
     .from("partner_profiles")
     .update({
       pipeline_name: normalizedPipelineName,
     })
-    .eq("user_id", user.id)
+    .eq("id", currentProfile.id)
     .select("*")
     .single<PartnerProfileRow>();
 
