@@ -114,6 +114,7 @@ export function ConsultorScreen({
   const [leadActivities, setLeadActivities] = useState<PartnerActivityRow[]>([]);
   const [leadActivitiesLoading, setLeadActivitiesLoading] = useState(false);
   const [pipelineNameDraft, setPipelineNameDraft] = useState(consultantPipelineName);
+  const [hoveredStageLabel, setHoveredStageLabel] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState({
     title: "",
     dueDate: "",
@@ -125,7 +126,7 @@ export function ConsultorScreen({
     organization: "",
     title: "",
     value: "12000",
-    funnel: "Pipeline comercial",
+    funnel: consultantPipelineName,
     stage: "Novo lead",
     tag: "Lead do diagnóstico",
     expectedCloseDate: "",
@@ -147,7 +148,6 @@ export function ConsultorScreen({
   const conversionRate = consultantLeads.length > 0 ? Math.round((qualifiedCount / consultantLeads.length) * 100) : 0;
   const activeLead = consultantLeads.find((lead) => lead.status !== "Perdido") ?? consultantLeads[0] ?? null;
   const agendaPreview = consultantAgenda.slice(0, 3);
-  const recentLeads = consultantLeads.slice(0, 5);
 
   const getLeadPreview = (lead: ConsultantLead) => {
     const summary = lead.diagnosisSummary?.trim() || lead.urgency?.trim() || lead.challenge?.trim() || "";
@@ -204,6 +204,14 @@ export function ConsultorScreen({
     return "consultant-priority-medium";
   };
 
+  const getLeadSourceLabel = (lead: ConsultantLead) => {
+    if (lead.challenge.toLowerCase().includes("manualmente")) {
+      return "Criado manualmente";
+    }
+
+    return "Diagnóstico + formulário";
+  };
+
   const pipelineColumns: Array<{
     id: ConsultantLead["status"];
     label: string;
@@ -215,6 +223,12 @@ export function ConsultorScreen({
     { id: "Reunião marcada", label: "Fechado", helper: "Call ou fechamento confirmado" },
     { id: "Perdido", label: "Perdido", helper: "Leads fora da janela atual" },
   ];
+  const selectedLeadStageIndex = selectedLead
+    ? Math.max(
+        pipelineColumns.findIndex((column) => column.id === selectedLead.status),
+        0,
+      )
+    : 0;
 
   const stopLeadModalPropagation: MouseEventHandler<HTMLElement> = (event) => {
     event.stopPropagation();
@@ -282,7 +296,7 @@ export function ConsultorScreen({
       organization: baseLead?.company ?? "",
       title: baseLead ? `${baseLead.objective} · ${baseLead.company}` : "Novo negócio",
       value: "12000",
-      funnel: "Pipeline comercial",
+      funnel: consultantPipelineName,
       stage:
         preferredStage ??
         (baseLead?.status === "Novo"
@@ -465,6 +479,10 @@ export function ConsultorScreen({
       return segment;
     });
   }, [stageSeries, totalStageCount]);
+  const activeDonutStage =
+    donutSegments.find((segment) => segment.label === hoveredStageLabel) ??
+    donutSegments.find((segment) => segment.value > 0) ??
+    donutSegments[0];
 
   const leadsByStatus = useMemo(
     () =>
@@ -497,6 +515,22 @@ export function ConsultorScreen({
   );
 
   const visibleLeadCount = leadsByStatus.reduce((total, column) => total + column.leads.length, 0);
+  const selectedLeadHistory = selectedLead
+    ? [
+        {
+          id: `${selectedLead.id}-created`,
+          title: "Lead recebido no pipeline",
+          meta: `Origem: ${getLeadSourceLabel(selectedLead)}`,
+          body: `Entrada registrada para ${selectedLead.company} com foco em ${selectedLead.objective.toLowerCase()}.`,
+        },
+        {
+          id: `${selectedLead.id}-diagnosis`,
+          title: "Diagnóstico consolidado",
+          meta: `Direção sugerida: ${selectedLead.recommendedCategory}`,
+          body: selectedLead.diagnosisSummary,
+        },
+      ]
+    : [];
 
   const openLeadWhatsApp = (lead: ConsultantLead) => {
     const digits = lead.phone.replace(/\D/g, "");
@@ -514,19 +548,77 @@ export function ConsultorScreen({
   };
 
   const lineChartPath = useMemo(() => {
-    const width = 360;
-    const height = 152;
+    const width = 560;
+    const height = 240;
+    const paddingLeft = 44;
+    const paddingRight = 12;
+    const paddingTop = 12;
+    const paddingBottom = 28;
+    const chartWidth = width - paddingLeft - paddingRight;
+    const chartHeight = height - paddingTop - paddingBottom;
     const maxValue = Math.max(...dailyLeadSeries.map((item) => item.count), 1);
 
     return dailyLeadSeries
       .map((item, index) => {
-        const x = (index / Math.max(dailyLeadSeries.length - 1, 1)) * width;
-        const y = height - (item.count / maxValue) * (height - 18) - 9;
+        const x = paddingLeft + (index / Math.max(dailyLeadSeries.length - 1, 1)) * chartWidth;
+        const y = paddingTop + chartHeight - (item.count / maxValue) * chartHeight;
 
         return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
       })
       .join(" ");
   }, [dailyLeadSeries]);
+  const lineChartMetrics = useMemo(() => {
+    const width = 560;
+    const height = 240;
+    const paddingLeft = 44;
+    const paddingRight = 12;
+    const paddingTop = 12;
+    const paddingBottom = 28;
+    const chartWidth = width - paddingLeft - paddingRight;
+    const chartHeight = height - paddingTop - paddingBottom;
+    const maxValue = Math.max(...dailyLeadSeries.map((item) => item.count), 1);
+    const tickBase = Math.max(maxValue, 3);
+    const ticks = Array.from(new Set([0, Math.ceil(tickBase / 3), Math.ceil((tickBase * 2) / 3), tickBase])).sort(
+      (a, b) => a - b,
+    );
+
+    const points = dailyLeadSeries.map((item, index) => {
+      const x = paddingLeft + (index / Math.max(dailyLeadSeries.length - 1, 1)) * chartWidth;
+      const y = paddingTop + chartHeight - (item.count / maxValue) * chartHeight;
+
+      return {
+        ...item,
+        x,
+        y,
+      };
+    });
+
+    const areaPath = `${lineChartPath} L ${paddingLeft + chartWidth} ${paddingTop + chartHeight} L ${paddingLeft} ${
+      paddingTop + chartHeight
+    } Z`;
+
+    const gridLines = ticks.map((tick) => {
+      const y = paddingTop + chartHeight - (tick / maxValue) * chartHeight;
+
+      return {
+        tick,
+        y,
+      };
+    });
+
+    return {
+      width,
+      height,
+      paddingLeft,
+      paddingTop,
+      chartWidth,
+      chartHeight,
+      points,
+      ticks,
+      gridLines,
+      areaPath,
+    };
+  }, [dailyLeadSeries, lineChartPath]);
 
   return (
     <main className="consultant-layout">
@@ -677,7 +769,7 @@ export function ConsultorScreen({
               <div className="consultant-tool-header-left">
                 <div className="consultant-tool-header-title">
                   <strong>Resolva CRM</strong>
-                  <span>Workspace comercial</span>
+                  <span>Operação comercial</span>
                 </div>
                 <label className="consultant-tool-search" aria-label="Busca global da ferramenta">
                   <span aria-hidden="true">⌕</span>
@@ -686,7 +778,7 @@ export function ConsultorScreen({
               </div>
               <div className="consultant-tool-header-right">
                 <button className="consultant-tool-chip" type="button" onClick={() => setActiveToolModal("pipeline")}>
-                  Pipeline comercial
+                  {consultantPipelineName}
                 </button>
                 <button
                   className="consultant-tool-action"
@@ -755,7 +847,7 @@ export function ConsultorScreen({
                 </h1>
                 <p>
                   {consultantSection === "dashboard"
-                    ? "KPIs, pipeline e ações do dia."
+                    ? "KPIs e ações do dia."
                     : consultantSection === "leads"
                       ? "Triagem rápida por etapa."
                       : consultantSection === "agenda"
@@ -773,7 +865,219 @@ export function ConsultorScreen({
               </div>
             </div>
 
-            {consultantSection === "dashboard" && (
+            {selectedLead ? (
+              <section className="consultant-deal-page">
+                <div className="consultant-deal-toolbar">
+                  <button className="consultant-deal-back" type="button" onClick={() => setSelectedLead(null)}>
+                    ← Voltar ao pipeline
+                  </button>
+                  <div className="consultant-deal-toolbar-actions">
+                    <button
+                      className="consultant-card-action consultant-card-action-whatsapp"
+                      type="button"
+                      onClick={() => openLeadWhatsApp(selectedLead)}
+                    >
+                      WhatsApp
+                    </button>
+                    <button
+                      className="consultant-card-action consultant-card-action-secondary"
+                      type="button"
+                      onClick={() => openActivityModal(selectedLead)}
+                    >
+                      Criar atividade
+                    </button>
+                    <button className="primary-button" type="button" onClick={() => onConsultantSectionChange("leads")}>
+                      Ver no pipeline
+                    </button>
+                  </div>
+                </div>
+
+                <div className="consultant-deal-hero">
+                  <div className="consultant-deal-hero-copy">
+                    <p className="section-kicker">Negócio em operação</p>
+                    <h2>{selectedLead.company}</h2>
+                    <p>
+                      {selectedLead.contact} · {selectedLead.role}
+                    </p>
+                  </div>
+                  <div className="consultant-deal-hero-meta">
+                    <span className={`status-pill status-${toStatusClassName(selectedLead.status)}`}>{selectedLead.status}</span>
+                    <span className={`consultant-priority-chip ${getLeadPriorityClassName(selectedLead)}`}>
+                      {getLeadPriority(selectedLead)}
+                    </span>
+                    <span className="consultant-context-chip">{consultantPipelineName}</span>
+                  </div>
+                </div>
+
+                <div className="consultant-deal-stage-strip">
+                  {pipelineColumns.map((column, index) => (
+                    <div
+                      key={column.id}
+                      className={
+                        index < selectedLeadStageIndex
+                          ? "consultant-deal-stage completed"
+                          : index === selectedLeadStageIndex
+                            ? "consultant-deal-stage active"
+                            : "consultant-deal-stage"
+                      }
+                    >
+                      <span>{column.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="consultant-deal-layout">
+                  <aside className="consultant-deal-sidebar">
+                    <section className="consultant-deal-card">
+                      <h3>Resumo</h3>
+                      <div className="consultant-deal-list">
+                        <div>
+                          <span>Contato</span>
+                          <strong>{selectedLead.contact}</strong>
+                          <small>{selectedLead.email}</small>
+                          <small>{selectedLead.phone}</small>
+                        </div>
+                        <div>
+                          <span>Empresa</span>
+                          <strong>{selectedLead.company}</strong>
+                          <small>{selectedLead.role}</small>
+                        </div>
+                        <div>
+                          <span>Origem</span>
+                          <strong>{getLeadSourceLabel(selectedLead)}</strong>
+                          <small>{consultantPipelineName}</small>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="consultant-deal-card">
+                      <h3>Dados do quiz</h3>
+                      <div className="consultant-deal-list">
+                        <div>
+                          <span>Objetivo</span>
+                          <strong>{selectedLead.objective}</strong>
+                        </div>
+                        <div>
+                          <span>Diagnóstico</span>
+                          <strong>{selectedLead.diagnosis}</strong>
+                        </div>
+                        <div>
+                          <span>Dor principal</span>
+                          <strong>{selectedLead.urgency}</strong>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="consultant-deal-card">
+                      <h3>Tags e leitura</h3>
+                      <div className="consultant-deal-chip-cloud">
+                        <span className="consultant-context-chip">{selectedLead.recommendedCategory}</span>
+                        <span className="consultant-context-chip">{getLeadPriority(selectedLead)}</span>
+                        <span className="consultant-context-chip">{selectedLead.status}</span>
+                      </div>
+                    </section>
+                  </aside>
+
+                  <div className="consultant-deal-main">
+                    <section className="consultant-deal-card">
+                      <div className="consultant-panel-header">
+                        <h3>Atividade</h3>
+                        <span>Próximo passo comercial</span>
+                      </div>
+                      <div className="consultant-deal-activity-composer">
+                        <button
+                          className="consultant-deal-composer-button"
+                          type="button"
+                          onClick={() => openActivityModal(selectedLead)}
+                        >
+                          Criar atividade para {selectedLead.contact}
+                        </button>
+                        <div className="consultant-deal-composer-hint">
+                          <strong>Sugestão prática</strong>
+                          <p>
+                            Entrar citando {selectedLead.diagnosis.toLowerCase()} e conectar o próximo passo com{" "}
+                            {selectedLead.objective.toLowerCase()}.
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="consultant-deal-card">
+                      <div className="consultant-panel-header">
+                        <h3>Histórico e atividades</h3>
+                        <span>Timeline operacional</span>
+                      </div>
+                      <div className="consultant-deal-tabbar">
+                        <button className="consultant-deal-tab active" type="button">
+                          Atividades
+                        </button>
+                        <button className="consultant-deal-tab" type="button">
+                          Histórico
+                        </button>
+                        <button className="consultant-deal-tab" type="button">
+                          Notas
+                        </button>
+                      </div>
+                      <div className="consultant-deal-timeline">
+                        {leadActivitiesLoading ? (
+                          <p className="result-cta-hint">Carregando atividades...</p>
+                        ) : leadActivities.length > 0 ? (
+                          leadActivities.map((activity) => (
+                            <article className="consultant-deal-timeline-item" key={activity.id}>
+                              <div className="consultant-deal-timeline-dot" />
+                              <div className="consultant-deal-timeline-body">
+                                <strong>{activity.title}</strong>
+                                <span>
+                                  {activity.channel || "Canal não informado"}
+                                  {activity.due_date ? ` · ${activity.due_date}` : ""}
+                                </span>
+                                <p>{activity.note || "Atividade registrada para este lead."}</p>
+                              </div>
+                              <span className="consultant-context-chip">{activity.status}</span>
+                            </article>
+                          ))
+                        ) : (
+                          selectedLeadHistory.map((item) => (
+                            <article className="consultant-deal-timeline-item" key={item.id}>
+                              <div className="consultant-deal-timeline-dot" />
+                              <div className="consultant-deal-timeline-body">
+                                <strong>{item.title}</strong>
+                                <span>{item.meta}</span>
+                                <p>{item.body}</p>
+                              </div>
+                            </article>
+                          ))
+                        )}
+                      </div>
+                    </section>
+
+                    <div className="consultant-deal-main-grid">
+                      <section className="consultant-deal-card">
+                        <div className="consultant-panel-header">
+                          <h3>Notas do deal</h3>
+                          <span>Leitura consolidada</span>
+                        </div>
+                        <p className="consultant-deal-note">
+                          {selectedLead.diagnosisSummary || "Sem nota consolidada ainda para este lead."}
+                        </p>
+                      </section>
+
+                      <section className="consultant-deal-card">
+                        <div className="consultant-panel-header">
+                          <h3>Próximos passos</h3>
+                          <span>Plano recomendado</span>
+                        </div>
+                        <ul className="consultant-deal-next-steps">
+                          <li>Confirmar aderência à dor principal e validar urgência.</li>
+                          <li>Apresentar caminho comercial ligado a {selectedLead.recommendedCategory.toLowerCase()}.</li>
+                          <li>Registrar atividade e mover o lead após resposta.</li>
+                        </ul>
+                      </section>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            ) : consultantSection === "dashboard" && (
               <>
                 <div className="consultant-stats-grid">
                   <article className="consultant-stat-card">
@@ -807,32 +1111,39 @@ export function ConsultorScreen({
                     <div className="consultant-chart-grid">
                       <article className="consultant-chart-card">
                         <div className="consultant-chart-card-header">
-                          <strong>Entradas por dia</strong>
+                          <strong>Entradas por data</strong>
                           <span>
-                            {dailyLeadSeries.reduce((total, item) => total + item.count, 0)} leads · pico de {maxDailyLeadCount}
+                            {dailyLeadSeries.reduce((total, item) => total + item.count, 0)} leads no período · pico de {maxDailyLeadCount}
                           </span>
                         </div>
-                        <div className="consultant-line-chart">
-                          <svg viewBox="0 0 360 180" aria-hidden="true">
+                        <div className="consultant-line-chart consultant-line-chart-expanded">
+                          <svg viewBox={`0 0 ${lineChartMetrics.width} ${lineChartMetrics.height}`} aria-hidden="true">
                             <defs>
                               <linearGradient id="consultantLineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor="rgba(249, 115, 22, 0.24)" />
                                 <stop offset="100%" stopColor="rgba(249, 115, 22, 0)" />
                               </linearGradient>
                             </defs>
-                            <path className="consultant-line-chart-gridline" d="M 0 150 H 360" />
-                            <path className="consultant-line-chart-gridline" d="M 0 102 H 360" />
-                            <path className="consultant-line-chart-gridline" d="M 0 54 H 360" />
-                            <path className="consultant-line-chart-area" d={`${lineChartPath} L 360 180 L 0 180 Z`} />
+                            {lineChartMetrics.gridLines.map((line) => (
+                              <g key={line.tick}>
+                                <path
+                                  className="consultant-line-chart-gridline"
+                                  d={`M ${lineChartMetrics.paddingLeft} ${line.y} H ${
+                                    lineChartMetrics.paddingLeft + lineChartMetrics.chartWidth
+                                  }`}
+                                />
+                                <text className="consultant-line-chart-axis-label" x="0" y={line.y + 4}>
+                                  {line.tick}
+                                </text>
+                              </g>
+                            ))}
+                            <path className="consultant-line-chart-area" d={lineChartMetrics.areaPath} />
                             <path className="consultant-line-chart-path" d={lineChartPath} />
-                            {dailyLeadSeries.map((item, index) => {
-                              const x = (index / Math.max(dailyLeadSeries.length - 1, 1)) * 360;
-                              const y = 152 - (item.count / maxDailyLeadCount) * (152 - 18);
-
+                            {lineChartMetrics.points.map((item) => {
                               return (
                                 <g key={item.label}>
-                                  <circle className="consultant-line-chart-dot" cx={x} cy={y} r="4" />
-                                  <text className="consultant-line-chart-value" x={x} y={y - 12}>
+                                  <circle className="consultant-line-chart-dot" cx={item.x} cy={item.y} r="4" />
+                                  <text className="consultant-line-chart-value" x={item.x} y={item.y - 12}>
                                     {item.count}
                                   </text>
                                 </g>
@@ -858,60 +1169,71 @@ export function ConsultorScreen({
                               {donutSegments.map((segment) => (
                                 <circle
                                   key={segment.label}
-                                  className="consultant-donut-segment"
+                                  className={
+                                    activeDonutStage?.label === segment.label
+                                      ? "consultant-donut-segment active"
+                                      : "consultant-donut-segment"
+                                  }
                                   cx="70"
                                   cy="70"
                                   r="52"
                                   stroke={segment.color}
                                   strokeDasharray={`${segment.length} ${segment.circumference - segment.length}`}
                                   strokeDashoffset={segment.offset}
+                                  onMouseEnter={() => setHoveredStageLabel(segment.label)}
+                                  onMouseLeave={() => setHoveredStageLabel(null)}
                                 />
                               ))}
                             </svg>
                             <div className="consultant-donut-center">
-                              <strong>{totalStageCount.toString().padStart(2, "0")}</strong>
-                              <span>leads</span>
+                              <strong>{(activeDonutStage?.value ?? totalStageCount).toString().padStart(2, "0")}</strong>
+                              <span>{activeDonutStage?.label ?? "leads"}</span>
                             </div>
                           </div>
                           <div className="consultant-donut-legend">
                             {stageSeries.map((stage, index) => (
-                              <div className="consultant-donut-legend-row" key={stage.label}>
+                              <button
+                                className={
+                                  activeDonutStage?.label === stage.label
+                                    ? "consultant-donut-legend-row active"
+                                    : "consultant-donut-legend-row"
+                                }
+                                key={stage.label}
+                                type="button"
+                                onMouseEnter={() => setHoveredStageLabel(stage.label)}
+                                onMouseLeave={() => setHoveredStageLabel(null)}
+                              >
                                 <span
                                   className="consultant-donut-dot"
                                   style={{ backgroundColor: donutSegments[index]?.color }}
                                 />
                                 <strong>{stage.label}</strong>
                                 <span>{stage.value.toString().padStart(2, "0")}</span>
-                              </div>
+                              </button>
                             ))}
                           </div>
                         </div>
                       </article>
                     </div>
 
-                    <div className="consultant-list-panel">
-                      <div className="consultant-list-panel-header">
-                        <strong>Leads recentes</strong>
-                        <span>Últimas entradas</span>
-                      </div>
-                      {consultantLeadsLoading ? (
-                        <p className="result-cta-hint">Carregando leads da instância...</p>
-                      ) : recentLeads.length === 0 ? (
-                        <p className="result-cta-hint">Ainda não há leads registrados para esta instância.</p>
-                      ) : (
-                        <div className="consultant-rows">
-                          {recentLeads.map((lead) => (
-                            <button className="consultant-row" key={lead.id} type="button" onClick={() => setSelectedLead(lead)}>
-                              <div className="consultant-row-main">
-                                <strong>{lead.company}</strong>
-                                <span>{lead.contact}</span>
-                              </div>
-                              <span className="consultant-row-tag">{lead.status}</span>
-                              <span>{lead.updatedAt}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    <div className="consultant-dashboard-metrics">
+                      <article className="consultant-mini-dashboard-card">
+                        <span>Melhor etapa agora</span>
+                        <strong>{activeDonutStage?.label ?? "Novo lead"}</strong>
+                        <small>{(activeDonutStage?.value ?? 0).toString().padStart(2, "0")} leads nesta etapa</small>
+                      </article>
+                      <article className="consultant-mini-dashboard-card">
+                        <span>Novas entradas</span>
+                        <strong>
+                          {dailyLeadSeries[dailyLeadSeries.length - 1]?.count.toString().padStart(2, "0") ?? "00"}
+                        </strong>
+                        <small>Leads registrados na data mais recente</small>
+                      </article>
+                      <article className="consultant-mini-dashboard-card">
+                        <span>Pipeline ativo</span>
+                        <strong>{openPipelineCount.toString().padStart(2, "0")}</strong>
+                        <small>{qualifiedCount.toString().padStart(2, "0")} com avanço comercial</small>
+                      </article>
                     </div>
                   </section>
 
@@ -1021,7 +1343,7 @@ export function ConsultorScreen({
                       {openPipelineCount.toString().padStart(2, "0")} ativos · {conversionRate}% conversão
                     </span>
                     <button className="consultant-toolbar-select" type="button" onClick={() => setActiveToolModal("pipeline")}>
-                      Pipeline comercial
+                      {consultantPipelineName}
                     </button>
                     <button className="consultant-toolbar-select" type="button" onClick={() => setActiveToolModal("filters")}>
                       Todos os leads
@@ -1245,146 +1567,6 @@ export function ConsultorScreen({
         </section>
       )}
 
-      {selectedLead && (
-        <div className="modal-overlay" role="presentation" onClick={() => setSelectedLead(null)}>
-          <section
-            className={`contact-modal consultant-lead-modal ${
-              themeMode === "dark" ? "consultant-theme-dark" : "consultant-theme-light"
-            }`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="consultant-lead-modal-title"
-            onClick={stopLeadModalPropagation}
-          >
-            <div className="contact-modal-header consultant-lead-modal-header">
-              <div>
-                <p className="section-kicker">Lead quente do diagnóstico</p>
-                <h2 id="consultant-lead-modal-title">{selectedLead.company}</h2>
-                <p>
-                  {selectedLead.contact} · {selectedLead.role}
-                </p>
-              </div>
-              <button
-                className="modal-close"
-                type="button"
-                onClick={() => setSelectedLead(null)}
-                aria-label="Fechar modal"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="consultant-lead-modal-topbar">
-              <div className="consultant-lead-modal-chips">
-                <span className={`status-pill status-${toStatusClassName(selectedLead.status)}`}>{selectedLead.status}</span>
-                <span className={`consultant-priority-chip ${getLeadPriorityClassName(selectedLead)}`}>
-                  {getLeadPriority(selectedLead)}
-                </span>
-                <span className="consultant-context-chip">{selectedLead.recommendedCategory}</span>
-              </div>
-              <div className="consultant-lead-modal-actions">
-                <button
-                  className="consultant-card-action consultant-card-action-whatsapp"
-                  type="button"
-                  onClick={() => openLeadWhatsApp(selectedLead)}
-                >
-                  WhatsApp
-                </button>
-                <button
-                  className="consultant-card-action consultant-card-action-secondary"
-                  type="button"
-                  onClick={() => openActivityModal(selectedLead)}
-                >
-                  Criar atividade
-                </button>
-                <button className="primary-button" type="button" onClick={() => setSelectedLead(null)}>
-                  Fechar lead
-                </button>
-              </div>
-            </div>
-
-            <div className="consultant-lead-modal-grid">
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Contato</p>
-                <strong>{selectedLead.contact}</strong>
-                <span>{selectedLead.email}</span>
-                <span>{selectedLead.phone}</span>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Status e prioridade</p>
-                <div className="consultant-lead-modal-chips">
-                  <span className={`status-pill status-${toStatusClassName(selectedLead.status)}`}>{selectedLead.status}</span>
-                  <span className={`consultant-priority-chip ${getLeadPriorityClassName(selectedLead)}`}>
-                    {getLeadPriority(selectedLead)}
-                  </span>
-                </div>
-                <span>Atualizado em {selectedLead.updatedAt}</span>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Empresa e objetivo</p>
-                <strong>{selectedLead.company}</strong>
-                <span>{selectedLead.objective}</span>
-                <span>{selectedLead.recommendedCategory}</span>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Desafio inicial</p>
-                <strong>{selectedLead.challenge}</strong>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Dor principal</p>
-                <strong>{selectedLead.urgency}</strong>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Diagnóstico</p>
-                <strong>{selectedLead.diagnosis}</strong>
-                <span>{selectedLead.diagnosisSummary}</span>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Leitura do quiz</p>
-                <strong>{selectedLead.objective}</strong>
-                <span>Direção sugerida: {selectedLead.recommendedCategory}</span>
-                <span>Especialista recomendado: {selectedLead.recommendedSpecialist}</span>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Abordagem sugerida</p>
-                <strong>Entrar pelo resultado que esse lead quer destravar.</strong>
-                <span>Falar com foco em {selectedLead.objective.toLowerCase()} e conectar isso ao diagnóstico atual.</span>
-                <span>Evitar discurso genérico; conduzir para próximo passo comercial com data definida.</span>
-              </div>
-              <div className="consultant-lead-modal-section">
-                <p className="consultant-lead-label">Próxima ação recomendada</p>
-                <strong>{`Follow-up com ${selectedLead.contact}`}</strong>
-                <span>Canal principal: WhatsApp</span>
-                <span>Registrar atividade e mover de etapa após contato.</span>
-              </div>
-              <div className="consultant-lead-modal-section consultant-lead-modal-section-wide">
-                <p className="consultant-lead-label">Atividades do lead</p>
-                {leadActivitiesLoading ? (
-                  <span>Carregando atividades...</span>
-                ) : leadActivities.length === 0 ? (
-                  <span>Nenhuma atividade registrada ainda para este lead.</span>
-                ) : (
-                  <div className="consultant-activity-list">
-                    {leadActivities.map((activity) => (
-                      <article className="consultant-activity-item" key={activity.id}>
-                        <div>
-                          <strong>{activity.title}</strong>
-                          <span>
-                            {activity.channel || "Canal não informado"}
-                            {activity.due_date ? ` · ${activity.due_date}` : ""}
-                          </span>
-                        </div>
-                        <span className="consultant-context-chip">{activity.status}</span>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
-
       {activeToolModal && (
         <div className="modal-overlay" role="presentation" onClick={closeToolModal}>
           <section
@@ -1566,7 +1748,7 @@ export function ConsultorScreen({
                 <div className="consultant-tool-inline-fields">
                   <div className="consultant-tool-summary-card">
                     <strong>Visualização ativa</strong>
-                    <span>Pipeline comercial · {visibleLeadCount} itens visíveis</span>
+                    <span>{consultantPipelineName} · {visibleLeadCount} itens visíveis</span>
                   </div>
                   <div className="consultant-tool-summary-card">
                     <strong>Resumo do board</strong>
