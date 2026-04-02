@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEventHandler, FormEventHandler, MouseEventHandler } from "react";
 
+import { createActivity, listActivitiesByLead } from "../../lib/repositories/activitiesRepository";
 import type { ConsultantAgendaItem, ConsultantLead, ConsultantSection } from "../../types/domain";
+import type { PartnerActivityRow } from "../../types/database";
 
 type ConsultantForm = {
   email: string;
@@ -12,6 +14,24 @@ type ConsultantForm = {
 type ConsultantStat = {
   label: string;
   value: string;
+};
+
+type ConsultantDealDraft = {
+  contactName: string;
+  organization: string;
+  title: string;
+  value: string;
+  funnel: string;
+  stage: string;
+  tag: string;
+  expectedCloseDate: string;
+  owner: string;
+  sourceChannel: string;
+  sourceChannelId: string;
+  visibility: string;
+  phone: string;
+  email: string;
+  role: string;
 };
 
 type ConsultorScreenProps = {
@@ -27,6 +47,10 @@ type ConsultorScreenProps = {
   consultantLeads: ConsultantLead[];
   consultantAgenda: ConsultantAgendaItem[];
   toStatusClassName: (value: string) => string;
+  onCreateConsultantDeal: (draft: ConsultantDealDraft) => Promise<{
+    success: boolean;
+    error?: string | null;
+  }>;
   onConsultantLogin: FormEventHandler<HTMLFormElement>;
   onConsultantLogout: () => void;
   onToggleTheme: () => void;
@@ -49,6 +73,7 @@ export function ConsultorScreen({
   consultantLeads,
   consultantAgenda,
   toStatusClassName,
+  onCreateConsultantDeal,
   onConsultantLogin,
   onConsultantLogout,
   onToggleTheme,
@@ -63,6 +88,12 @@ export function ConsultorScreen({
     null | "pipeline" | "activity" | "quick-create" | "filters" | "deal-create"
   >(null);
   const [activityLead, setActivityLead] = useState<ConsultantLead | null>(null);
+  const [toolError, setToolError] = useState<string | null>(null);
+  const [toolSuccess, setToolSuccess] = useState<string | null>(null);
+  const [isSavingDeal, setIsSavingDeal] = useState(false);
+  const [isSavingActivity, setIsSavingActivity] = useState(false);
+  const [leadActivities, setLeadActivities] = useState<PartnerActivityRow[]>([]);
+  const [leadActivitiesLoading, setLeadActivitiesLoading] = useState(false);
   const [pipelineNameDraft, setPipelineNameDraft] = useState("Pipeline comercial");
   const [activityForm, setActivityForm] = useState({
     title: "",
@@ -170,6 +201,41 @@ export function ConsultorScreen({
     event.stopPropagation();
   };
 
+  useEffect(() => {
+    setToolError(null);
+    setToolSuccess(null);
+  }, [activeToolModal]);
+
+  useEffect(() => {
+    if (!selectedLead || !consultantInstanceSlug) {
+      setLeadActivities([]);
+      setLeadActivitiesLoading(false);
+      return;
+    }
+
+    let isActive = true;
+    setLeadActivitiesLoading(true);
+
+    void listActivitiesByLead(selectedLead.id, consultantInstanceSlug).then((result) => {
+      if (!isActive) {
+        return;
+      }
+
+      if (!result.success) {
+        setLeadActivities([]);
+        setLeadActivitiesLoading(false);
+        return;
+      }
+
+      setLeadActivities(result.data);
+      setLeadActivitiesLoading(false);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [consultantInstanceSlug, selectedLead]);
+
   const openActivityModal = (lead?: ConsultantLead) => {
     setActivityLead(lead ?? activeLead ?? null);
     setActivityForm({
@@ -181,7 +247,7 @@ export function ConsultorScreen({
     setActiveToolModal("activity");
   };
 
-  const openDealCreateModal = (lead?: ConsultantLead | null) => {
+  const openDealCreateModal = (lead?: ConsultantLead | null, preferredStage?: string) => {
     const baseLead = lead ?? activeLead ?? null;
 
     setDealForm({
@@ -190,7 +256,17 @@ export function ConsultorScreen({
       title: baseLead ? `${baseLead.objective} · ${baseLead.company}` : "Novo negócio",
       value: "12000",
       funnel: "Pipeline comercial",
-      stage: baseLead?.status === "Novo" ? "Novo lead" : baseLead?.status ?? "Novo lead",
+      stage:
+        preferredStage ??
+        (baseLead?.status === "Novo"
+          ? "Novo lead"
+          : baseLead?.status === "Em contato"
+            ? "Contato iniciado"
+            : baseLead?.status === "Qualificado"
+              ? "Em negociação"
+              : baseLead?.status === "Reunião marcada"
+                ? "Fechado"
+                : baseLead?.status ?? "Novo lead"),
       tag: baseLead ? getLeadPriority(baseLead) : "Lead do diagnóstico",
       expectedCloseDate: "",
       owner: "Resolva Seu Negócio (Você)",
@@ -207,6 +283,77 @@ export function ConsultorScreen({
   const closeToolModal = () => {
     setActiveToolModal(null);
     setActivityLead(null);
+    setToolError(null);
+    setToolSuccess(null);
+  };
+
+  const handleActivityCreate = async () => {
+    if (!consultantInstanceSlug) {
+      setToolError("Não foi possível identificar a instância ativa.");
+      return;
+    }
+
+    const lead = activityLead ?? selectedLead ?? activeLead;
+
+    if (!lead) {
+      setToolError("Selecione um lead para criar a atividade.");
+      return;
+    }
+
+    if (!activityForm.title.trim()) {
+      setToolError("Informe um título para a atividade.");
+      return;
+    }
+
+    setIsSavingActivity(true);
+    setToolError(null);
+
+    const result = await createActivity({
+      partner_instance_slug: consultantInstanceSlug,
+      lead_id: lead.id,
+      title: activityForm.title.trim(),
+      due_date: activityForm.dueDate || null,
+      channel: activityForm.channel,
+      note: activityForm.note.trim() || null,
+      status: "Pendente",
+    });
+
+    setIsSavingActivity(false);
+
+    if (!result.success) {
+      setToolError("Não foi possível salvar a atividade agora.");
+      return;
+    }
+
+    setLeadActivities((current) => [result.data, ...current]);
+    setToolSuccess("Atividade criada e vinculada ao lead.");
+    window.setTimeout(() => {
+      closeToolModal();
+    }, 300);
+  };
+
+  const handleDealCreate = async () => {
+    if (!dealForm.contactName.trim() || !dealForm.organization.trim() || !dealForm.title.trim()) {
+      setToolError("Preencha contato, organização e título do negócio.");
+      return;
+    }
+
+    setIsSavingDeal(true);
+    setToolError(null);
+
+    const result = await onCreateConsultantDeal(dealForm);
+
+    setIsSavingDeal(false);
+
+    if (!result.success) {
+      setToolError(result.error ?? "Não foi possível criar o negócio agora.");
+      return;
+    }
+
+    setToolSuccess("Negócio criado e enviado para o pipeline.");
+    window.setTimeout(() => {
+      closeToolModal();
+    }, 300);
   };
 
   const dailyLeadSeries = useMemo(() => {
@@ -844,7 +991,17 @@ export function ConsultorScreen({
                             <strong>{column.label}</strong>
                             <span>{column.helper}</span>
                           </div>
-                          <small>{column.leads.length}</small>
+                          <div className="consultant-pipeline-column-actions">
+                            <small>{column.leads.length}</small>
+                            <button
+                              className="consultant-pipeline-column-add"
+                              type="button"
+                              aria-label={`Adicionar negócio em ${column.label}`}
+                              onClick={() => openDealCreateModal(null, column.label)}
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
 
                         <div className="consultant-pipeline-stack">
@@ -1150,6 +1307,29 @@ export function ConsultorScreen({
                 <span>Canal principal: WhatsApp</span>
                 <span>Registrar atividade e mover de etapa após contato.</span>
               </div>
+              <div className="consultant-lead-modal-section consultant-lead-modal-section-wide">
+                <p className="consultant-lead-label">Atividades do lead</p>
+                {leadActivitiesLoading ? (
+                  <span>Carregando atividades...</span>
+                ) : leadActivities.length === 0 ? (
+                  <span>Nenhuma atividade registrada ainda para este lead.</span>
+                ) : (
+                  <div className="consultant-activity-list">
+                    {leadActivities.map((activity) => (
+                      <article className="consultant-activity-item" key={activity.id}>
+                        <div>
+                          <strong>{activity.title}</strong>
+                          <span>
+                            {activity.channel || "Canal não informado"}
+                            {activity.due_date ? ` · ${activity.due_date}` : ""}
+                          </span>
+                        </div>
+                        <span className="consultant-context-chip">{activity.status}</span>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         </div>
@@ -1196,6 +1376,12 @@ export function ConsultorScreen({
                 ×
               </button>
             </div>
+
+            {(toolError || toolSuccess) && (
+              <div className={toolError ? "consultant-tool-feedback consultant-tool-feedback-error" : "consultant-tool-feedback consultant-tool-feedback-success"}>
+                {toolError ?? toolSuccess}
+              </div>
+            )}
 
             {activeToolModal === "pipeline" && (
               <div className="consultant-tool-modal-grid">
@@ -1309,8 +1495,8 @@ export function ConsultorScreen({
                   <button className="consultant-card-action" type="button" onClick={closeToolModal}>
                     Cancelar
                   </button>
-                  <button className="primary-button" type="button" onClick={closeToolModal}>
-                    Criar atividade
+                  <button className="primary-button" type="button" onClick={handleActivityCreate} disabled={isSavingActivity}>
+                    {isSavingActivity ? "Salvando..." : "Criar atividade"}
                   </button>
                 </div>
               </div>
@@ -1530,8 +1716,8 @@ export function ConsultorScreen({
                   <button className="consultant-card-action" type="button" onClick={closeToolModal}>
                     Cancelar
                   </button>
-                  <button className="primary-button" type="button" onClick={closeToolModal}>
-                    Salvar negócio
+                  <button className="primary-button" type="button" onClick={handleDealCreate} disabled={isSavingDeal}>
+                    {isSavingDeal ? "Salvando..." : "Salvar negócio"}
                   </button>
                 </div>
               </div>
