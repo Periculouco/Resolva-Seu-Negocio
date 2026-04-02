@@ -2499,7 +2499,8 @@ button {
   padding: 0 18px;
 }
 
-.consultant-dashboard {
+.consultant-dashboard,
+.consultant-theme-light {
   --consultant-sidebar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 250, 252, 0.98));
   --consultant-sidebar-border: rgba(44, 62, 80, 0.08);
   --consultant-sidebar-text: #1f2937;
@@ -2522,6 +2523,9 @@ button {
   --consultant-accent: #f97316;
   --consultant-accent-strong: #ea5b0c;
   --consultant-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.consultant-dashboard {
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr);
   gap: 14px;
@@ -2529,7 +2533,8 @@ button {
   align-items: start;
 }
 
-.consultant-dashboard.consultant-theme-dark {
+.consultant-dashboard.consultant-theme-dark,
+.consultant-theme-dark {
   --consultant-sidebar-bg: linear-gradient(180deg, rgba(32, 32, 34, 0.98), rgba(18, 18, 20, 0.98));
   --consultant-sidebar-border: rgba(255, 255, 255, 0.08);
   --consultant-sidebar-text: #f7f5f1;
@@ -2555,7 +2560,8 @@ button {
   --consultant-chart-secondary: rgba(96, 165, 250, 0.78);
 }
 
-.consultant-dashboard.consultant-theme-light {
+.consultant-dashboard.consultant-theme-light,
+.consultant-theme-light {
   --consultant-chart-secondary: rgba(59, 130, 246, 0.82);
 }
 
@@ -3306,6 +3312,10 @@ button {
 
 .consultant-tool-modal {
   width: min(720px, calc(100vw - 28px));
+  max-height: min(88vh, 860px);
+  overflow: auto;
+  padding: 24px;
+  border-radius: 24px;
   background: var(--consultant-surface);
   border: 1px solid var(--consultant-panel-border);
   box-shadow: 0 28px 64px rgba(49, 31, 20, 0.24);
@@ -3337,6 +3347,21 @@ button {
 .consultant-tool-quick-grid {
   display: grid;
   gap: 14px;
+}
+
+.consultant-deal-create-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  align-items: start;
+}
+
+.consultant-deal-create-main,
+.consultant-deal-create-side {
+  display: grid;
+  gap: 14px;
+}
+
+.consultant-deal-create-actions {
+  grid-column: 1 / -1;
 }
 
 .consultant-tool-inline-fields {
@@ -3416,6 +3441,12 @@ button {
   background: var(--consultant-card-bg);
   text-align: left;
   color: inherit;
+}
+
+.consultant-tool-quick-card:hover {
+  border-color: rgba(249, 115, 22, 0.24);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
 }
 
 .consultant-tool-quick-card strong {
@@ -3966,6 +3997,10 @@ button {
 
 .consultant-lead-modal {
   width: min(920px, calc(100vw - 28px));
+  max-height: min(88vh, 920px);
+  overflow: auto;
+  padding: 24px;
+  border-radius: 24px;
   background: var(--consultant-surface);
   border: 1px solid var(--consultant-panel-border);
   box-shadow: 0 28px 64px rgba(49, 31, 20, 0.24);
@@ -4276,6 +4311,10 @@ button {
   }
 
   .consultant-tool-inline-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .consultant-deal-create-grid {
     grid-template-columns: 1fr;
   }
 

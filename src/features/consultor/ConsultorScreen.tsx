@@ -59,7 +59,9 @@ export function ConsultorScreen({
 }: ConsultorScreenProps) {
   const [selectedLead, setSelectedLead] = useState<ConsultantLead | null>(null);
   const [kanbanSearch, setKanbanSearch] = useState("");
-  const [activeToolModal, setActiveToolModal] = useState<null | "pipeline" | "activity" | "quick-create" | "filters">(null);
+  const [activeToolModal, setActiveToolModal] = useState<
+    null | "pipeline" | "activity" | "quick-create" | "filters" | "deal-create"
+  >(null);
   const [activityLead, setActivityLead] = useState<ConsultantLead | null>(null);
   const [pipelineNameDraft, setPipelineNameDraft] = useState("Pipeline comercial");
   const [activityForm, setActivityForm] = useState({
@@ -67,6 +69,23 @@ export function ConsultorScreen({
     dueDate: "",
     channel: "WhatsApp",
     note: "",
+  });
+  const [dealForm, setDealForm] = useState({
+    contactName: "",
+    organization: "",
+    title: "",
+    value: "12000",
+    funnel: "Pipeline comercial",
+    stage: "Novo lead",
+    tag: "Lead do diagnóstico",
+    expectedCloseDate: "",
+    owner: "Resolva Seu Negócio (Você)",
+    sourceChannel: "Diagnóstico",
+    sourceChannelId: "quiz-diagnostico",
+    visibility: "Equipe comercial",
+    phone: "",
+    email: "",
+    role: "",
   });
   const nextMeeting = consultantAgenda[0] ?? null;
   const openPipelineCount = consultantLeads.filter((lead) => lead.status !== "Perdido").length;
@@ -160,6 +179,29 @@ export function ConsultorScreen({
       note: lead ? `Retomar contato com foco em ${lead.objective.toLowerCase()}.` : "",
     });
     setActiveToolModal("activity");
+  };
+
+  const openDealCreateModal = (lead?: ConsultantLead | null) => {
+    const baseLead = lead ?? activeLead ?? null;
+
+    setDealForm({
+      contactName: baseLead?.contact ?? "",
+      organization: baseLead?.company ?? "",
+      title: baseLead ? `${baseLead.objective} · ${baseLead.company}` : "Novo negócio",
+      value: "12000",
+      funnel: "Pipeline comercial",
+      stage: baseLead?.status === "Novo" ? "Novo lead" : baseLead?.status ?? "Novo lead",
+      tag: baseLead ? getLeadPriority(baseLead) : "Lead do diagnóstico",
+      expectedCloseDate: "",
+      owner: "Resolva Seu Negócio (Você)",
+      sourceChannel: "Diagnóstico",
+      sourceChannelId: "quiz-diagnostico",
+      visibility: "Equipe comercial",
+      phone: baseLead?.phone ?? "",
+      email: baseLead?.email ?? "",
+      role: baseLead?.role ?? "",
+    });
+    setActiveToolModal("deal-create");
   };
 
   const closeToolModal = () => {
@@ -471,7 +513,7 @@ export function ConsultorScreen({
                   className="consultant-tool-action consultant-tool-action-primary"
                   type="button"
                   aria-label="Adicionar"
-                  onClick={() => setActiveToolModal("quick-create")}
+                  onClick={() => openDealCreateModal()}
                 >
                   <span aria-hidden="true">＋</span>
                   Novo
@@ -1126,6 +1168,8 @@ export function ConsultorScreen({
                       ? "Criar atividade"
                       : activeToolModal === "filters"
                         ? "Filtros rápidos"
+                        : activeToolModal === "deal-create"
+                          ? "Adicionar negócio"
                         : "Criar novo"}
                 </h2>
                 <p>
@@ -1135,6 +1179,8 @@ export function ConsultorScreen({
                       ? "Adicione um próximo passo para o lead em foco."
                       : activeToolModal === "filters"
                         ? "Refine a visualização do board como em um CRM."
+                        : activeToolModal === "deal-create"
+                          ? "Crie um novo negócio com base nos dados do lead e do diagnóstico."
                         : "Escolha a próxima ação operacional do time."}
                 </p>
               </div>
@@ -1291,8 +1337,204 @@ export function ConsultorScreen({
               </div>
             )}
 
+            {activeToolModal === "deal-create" && (
+              <div className="consultant-tool-modal-grid consultant-deal-create-grid">
+                <div className="consultant-deal-create-main">
+                  <div className="consultant-tool-summary-card consultant-tool-summary-card-hero">
+                    <strong>Novo negócio no pipeline</strong>
+                    <span>Os leads costumam chegar preenchidos pelo quiz e pelo modal inicial. Aqui o time só complementa e organiza o deal.</span>
+                  </div>
+
+                  <label className="consultant-tool-field">
+                    Pessoa de contato
+                    <input
+                      value={dealForm.contactName}
+                      onChange={(event) => setDealForm((current) => ({ ...current, contactName: event.target.value }))}
+                      placeholder="Nome do contato"
+                    />
+                  </label>
+
+                  <label className="consultant-tool-field">
+                    Organização
+                    <input
+                      value={dealForm.organization}
+                      onChange={(event) => setDealForm((current) => ({ ...current, organization: event.target.value }))}
+                      placeholder="Nome da empresa"
+                    />
+                  </label>
+
+                  <label className="consultant-tool-field">
+                    Título
+                    <input
+                      value={dealForm.title}
+                      onChange={(event) => setDealForm((current) => ({ ...current, title: event.target.value }))}
+                      placeholder="Título do negócio"
+                    />
+                  </label>
+
+                  <div className="consultant-tool-inline-fields">
+                    <label className="consultant-tool-field">
+                      Valor estimado
+                      <input
+                        value={dealForm.value}
+                        onChange={(event) => setDealForm((current) => ({ ...current, value: event.target.value }))}
+                        placeholder="12000"
+                      />
+                    </label>
+                    <label className="consultant-tool-field">
+                      Pipeline stage
+                      <select
+                        value={dealForm.stage}
+                        onChange={(event) => setDealForm((current) => ({ ...current, stage: event.target.value }))}
+                      >
+                        {pipelineColumns.map((column) => (
+                          <option key={column.id}>{column.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="consultant-tool-inline-fields">
+                    <label className="consultant-tool-field">
+                      Funil
+                      <select
+                        value={dealForm.funnel}
+                        onChange={(event) => setDealForm((current) => ({ ...current, funnel: event.target.value }))}
+                      >
+                        <option>Pipeline comercial</option>
+                      </select>
+                    </label>
+                    <label className="consultant-tool-field">
+                      Etiqueta
+                      <input
+                        value={dealForm.tag}
+                        onChange={(event) => setDealForm((current) => ({ ...current, tag: event.target.value }))}
+                        placeholder="Lead do diagnóstico"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="consultant-tool-inline-fields">
+                    <label className="consultant-tool-field">
+                      Data de fechamento esperada
+                      <input
+                        type="date"
+                        value={dealForm.expectedCloseDate}
+                        onChange={(event) =>
+                          setDealForm((current) => ({ ...current, expectedCloseDate: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="consultant-tool-field">
+                      Proprietário
+                      <select
+                        value={dealForm.owner}
+                        onChange={(event) => setDealForm((current) => ({ ...current, owner: event.target.value }))}
+                      >
+                        <option>Resolva Seu Negócio (Você)</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="consultant-tool-inline-fields">
+                    <label className="consultant-tool-field">
+                      Canal de origem
+                      <select
+                        value={dealForm.sourceChannel}
+                        onChange={(event) => setDealForm((current) => ({ ...current, sourceChannel: event.target.value }))}
+                      >
+                        <option>Diagnóstico</option>
+                        <option>Formulário</option>
+                        <option>WhatsApp</option>
+                        <option>Manual</option>
+                      </select>
+                    </label>
+                    <label className="consultant-tool-field">
+                      ID do canal de origem
+                      <input
+                        value={dealForm.sourceChannelId}
+                        onChange={(event) => setDealForm((current) => ({ ...current, sourceChannelId: event.target.value }))}
+                        placeholder="quiz-diagnostico"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="consultant-tool-field">
+                    Visível para
+                    <select
+                      value={dealForm.visibility}
+                      onChange={(event) => setDealForm((current) => ({ ...current, visibility: event.target.value }))}
+                    >
+                      <option>Equipe comercial</option>
+                      <option>Somente proprietário</option>
+                    </select>
+                  </label>
+                </div>
+
+                <aside className="consultant-deal-create-side">
+                  <div className="consultant-tool-summary-card">
+                    <strong>Pessoa</strong>
+                    <div className="consultant-tool-inline-fields">
+                      <label className="consultant-tool-field">
+                        Telefone
+                        <input
+                          value={dealForm.phone}
+                          onChange={(event) => setDealForm((current) => ({ ...current, phone: event.target.value }))}
+                          placeholder="(85) 99999-1001"
+                        />
+                      </label>
+                      <label className="consultant-tool-field">
+                        Cargo
+                        <input
+                          value={dealForm.role}
+                          onChange={(event) => setDealForm((current) => ({ ...current, role: event.target.value }))}
+                          placeholder="CEO"
+                        />
+                      </label>
+                    </div>
+                    <label className="consultant-tool-field">
+                      E-mail
+                      <input
+                        value={dealForm.email}
+                        onChange={(event) => setDealForm((current) => ({ ...current, email: event.target.value }))}
+                        placeholder="email@empresa.com"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="consultant-tool-summary-card">
+                    <strong>Pré-preenchimento do lead</strong>
+                    <span>{activeLead ? `${activeLead.company} · ${activeLead.contact}` : "Sem lead em foco"}</span>
+                    <div className="consultant-tool-pill-list">
+                      <span className="consultant-context-chip">{activeLead?.recommendedCategory ?? "Categoria"}</span>
+                      <span className="consultant-context-chip">{activeLead?.objective ?? "Objetivo"}</span>
+                    </div>
+                  </div>
+
+                  <div className="consultant-tool-summary-card">
+                    <strong>Resumo operacional</strong>
+                    <span>{activeLead?.diagnosis ?? "Diagnóstico do lead em foco"}</span>
+                    <span>{activeLead?.diagnosisSummary ?? "Resumo do diagnóstico"}</span>
+                  </div>
+                </aside>
+
+                <div className="consultant-tool-modal-actions consultant-deal-create-actions">
+                  <button className="consultant-card-action" type="button" onClick={closeToolModal}>
+                    Cancelar
+                  </button>
+                  <button className="primary-button" type="button" onClick={closeToolModal}>
+                    Salvar negócio
+                  </button>
+                </div>
+              </div>
+            )}
+
             {activeToolModal === "quick-create" && (
               <div className="consultant-tool-quick-grid">
+                <button className="consultant-tool-quick-card" type="button" onClick={() => openDealCreateModal(activeLead)}>
+                  <strong>Novo negócio</strong>
+                  <span>Criar um novo deal já puxando o contexto do lead mais quente.</span>
+                </button>
                 <button className="consultant-tool-quick-card" type="button" onClick={() => setActiveToolModal("activity")}>
                   <strong>Nova atividade</strong>
                   <span>Criar follow-up, ligação, email ou reunião para um lead do pipeline.</span>
