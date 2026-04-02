@@ -1,6 +1,6 @@
 export type Area = "vendas" | "marketing" | "gestao" | "financeiro" | "outros";
 
-export type Screen = "landing" | "explore" | "quiz" | "loading" | "result" | "consultor";
+export type Screen = "landing" | "explore" | "partner-pitch" | "quiz" | "loading" | "result" | "consultor";
 
 export type ConsultantSection = "dashboard" | "leads" | "agenda" | "perfil";
 
@@ -63,6 +63,8 @@ export type ConsultantLead = {
   urgency: string;
   recommendedCategory: string;
   recommendedSpecialist: string;
+  createdAtIso: string;
+  updatedAtIso: string;
   updatedAt: string;
 };
 

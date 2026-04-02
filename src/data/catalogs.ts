@@ -425,6 +425,8 @@ export const consultantLeads: ConsultantLead[] = [
     urgency: "Alta",
     recommendedCategory: "Vendas",
     recommendedSpecialist: "Marcos Tavares",
+    createdAtIso: "2026-03-30T12:12:00.000Z",
+    updatedAtIso: "2026-04-01T12:12:00.000Z",
     updatedAt: "Hoje, 09:12",
   },
   {
@@ -442,6 +444,8 @@ export const consultantLeads: ConsultantLead[] = [
     urgency: "Média",
     recommendedCategory: "Gestao & Estrategia",
     recommendedSpecialist: "Renata Mota",
+    createdAtIso: "2026-03-29T13:41:00.000Z",
+    updatedAtIso: "2026-04-01T13:41:00.000Z",
     updatedAt: "Hoje, 10:41",
   },
   {
@@ -459,6 +463,8 @@ export const consultantLeads: ConsultantLead[] = [
     urgency: "Alta",
     recommendedCategory: "Financas",
     recommendedSpecialist: "Eduardo Nery",
+    createdAtIso: "2026-03-28T20:28:00.000Z",
+    updatedAtIso: "2026-03-31T20:28:00.000Z",
     updatedAt: "Ontem, 17:28",
   },
   {
@@ -476,6 +482,8 @@ export const consultantLeads: ConsultantLead[] = [
     urgency: "Média",
     recommendedCategory: "Marketing & Growth",
     recommendedSpecialist: "Camila Ferraz",
+    createdAtIso: "2026-03-27T18:03:00.000Z",
+    updatedAtIso: "2026-03-31T18:03:00.000Z",
     updatedAt: "Ontem, 15:03",
   },
 ];

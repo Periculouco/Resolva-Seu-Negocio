@@ -118,3 +118,28 @@ export type PartnerAgendaRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type PartnerPlanApplicationInsert = {
+  partner_name: string;
+  partner_email: string;
+  partner_specialty: string;
+  partner_portfolio_url?: string | null;
+  plan_slug: string;
+  billing_cycle?: "Mensal" | "Anual" | "Enterprise";
+  source_screen?: string | null;
+  status?: "Novo" | "Em análise";
+};
+
+export type PartnerPlanApplicationRow = {
+  id: string;
+  partner_name: string;
+  partner_email: string;
+  partner_specialty: string;
+  partner_portfolio_url: string | null;
+  plan_slug: string;
+  billing_cycle: "Mensal" | "Anual" | "Enterprise";
+  source_screen: string | null;
+  status: "Novo" | "Em análise";
+  created_at: string;
+  updated_at: string;
+};

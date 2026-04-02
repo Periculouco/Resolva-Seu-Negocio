@@ -120,3 +120,38 @@ export async function updateCurrentPartnerPipelineName(
     error: null,
   };
 }
+
+export async function updatePartnerPipelineNameByProfileId(
+  profileId: string,
+  pipelineName: string,
+): RepositoryResult<PartnerProfileRow> {
+  const normalizedProfileId = profileId.trim();
+  const normalizedPipelineName = pipelineName.trim();
+
+  if (!normalizedProfileId) {
+    return buildError("profileId is required");
+  }
+
+  if (!normalizedPipelineName) {
+    return buildError("pipelineName is required");
+  }
+
+  const { data, error } = await supabase
+    .from("partner_profiles")
+    .update({
+      pipeline_name: normalizedPipelineName,
+    })
+    .eq("id", normalizedProfileId)
+    .select("*")
+    .single<PartnerProfileRow>();
+
+  if (error) {
+    return buildError(error.message);
+  }
+
+  return {
+    success: true,
+    data,
+    error: null,
+  };
+}

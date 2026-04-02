@@ -342,13 +342,6 @@ function App() {
     setScreen("explore");
   };
 
-  const openHowItWorks = () => {
-    setScreen("landing");
-    window.setTimeout(() => {
-      document.getElementById("como-funciona")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
-  };
-
   const submitChallenge = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     startDiagnosis();
@@ -356,31 +349,6 @@ function App() {
 
   const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setFormData((previous) => ({ ...previous, [key]: value }));
-  };
-
-  const submitPartnerApplication = async (payload: {
-    partnerName: string;
-    partnerEmail: string;
-    partnerSpecialty: string;
-    partnerPortfolioUrl: string;
-    planSlug: string;
-    billingCycle: "Mensal" | "Anual" | "Enterprise";
-  }) => {
-    const result = await createPartnerPlanApplication({
-      partner_name: payload.partnerName,
-      partner_email: payload.partnerEmail,
-      partner_specialty: payload.partnerSpecialty,
-      partner_portfolio_url: payload.partnerPortfolioUrl || null,
-      plan_slug: payload.planSlug,
-      billing_cycle: payload.billingCycle,
-      source_screen: "partner_pitch",
-      status: "Novo",
-    });
-
-    return {
-      success: result.success,
-      error: result.success ? null : result.error,
-    };
   };
 
   const nextStep = () => {
@@ -779,6 +747,31 @@ function App() {
     setScreen("explore");
   };
 
+  const handlePartnerApplicationSubmit = async (payload: {
+    partnerName: string;
+    partnerEmail: string;
+    partnerSpecialty: string;
+    partnerPortfolioUrl: string;
+    planSlug: string;
+    billingCycle: "Mensal" | "Anual" | "Enterprise";
+  }) => {
+    const result = await createPartnerPlanApplication({
+      partner_name: payload.partnerName,
+      partner_email: payload.partnerEmail,
+      partner_specialty: payload.partnerSpecialty,
+      partner_portfolio_url: payload.partnerPortfolioUrl || null,
+      plan_slug: payload.planSlug,
+      billing_cycle: payload.billingCycle,
+      source_screen: "partner_pitch",
+      status: "Novo",
+    });
+
+    return {
+      success: result.success,
+      error: result.success ? null : result.error,
+    };
+  };
+
   const resolveCurrentPartnerProfile = useCallback(async () => {
     if (partnerProfile?.instance_slug) {
       return {
@@ -969,10 +962,7 @@ function App() {
     };
   };
 
-  const handleConsultantLeadStatusUpdate = async (
-    leadId: string,
-    status: ConsultantLead["status"],
-  ) => {
+  const handleConsultantLeadStatusUpdate = async (leadId: string, status: ConsultantLead["status"]) => {
     if (!consultantSession) {
       return {
         success: false,
@@ -989,32 +979,16 @@ function App() {
       };
     }
 
-    const instanceSlug = profileResult.data.instance_slug;
-    const updateResult = await updateLeadStatus(leadId, status, instanceSlug);
+    const result = await updateLeadStatus(leadId, status, profileResult.data.instance_slug);
 
-    if (!updateResult.success) {
+    if (!result.success) {
       return {
         success: false,
-        error: updateResult.error,
+        error: result.error,
       };
     }
 
-    const refreshResult = await refreshConsultantLeads(instanceSlug);
-
-    if (!refreshResult.success) {
-      setConsultantLeads((current) =>
-        current.map((lead) =>
-          lead.id === leadId
-            ? {
-                ...lead,
-                status,
-                updatedAtIso: updateResult.data.updated_at,
-                updatedAt: formatLeadTimestamp(updateResult.data.updated_at),
-              }
-            : lead,
-        ),
-      );
-    }
+    await refreshConsultantLeads(profileResult.data.instance_slug);
 
     return {
       success: true,
@@ -1093,11 +1067,15 @@ function App() {
             Explorar
           </button>
           <button className={screen === "consultor" ? "nav-link active" : "nav-link"} onClick={openConsultantArea}>
-            Área dos Parceiros
+            Área do parceiro
           </button>
-          <button className="nav-link" onClick={openHowItWorks}>
-            Como funciona
-          </button>
+          {screen === "landing" && (
+            <>
+              <a href="#numeros">Números</a>
+              <a href="#categorias">Categorias</a>
+              <a href="#como-funciona">Como funciona</a>
+            </>
+          )}
           <button className="theme-toggle" type="button" onClick={toggleThemeMode} aria-label="Alternar tema">
             {themeMode === "light" ? "◐" : "◑"}
           </button>
@@ -1123,8 +1101,8 @@ function App() {
           onSubmitChallenge={submitChallenge}
           onStartDiagnosis={startDiagnosis}
           onOpenExploreCategory={openExploreCategory}
-          onOpenPartnerPitch={openPartnerPitch}
           onOpenConsultantArea={openConsultantArea}
+          onOpenPartnerPitch={openPartnerPitch}
           AnimatedSignalList={AnimatedSignalList}
           AnimatedNumber={AnimatedNumber}
         />
@@ -1135,7 +1113,7 @@ function App() {
           themeMode={themeMode}
           onGoBack={goHome}
           onOpenConsultantArea={openConsultantArea}
-          onSubmitApplication={submitPartnerApplication}
+          onSubmitApplication={handlePartnerApplicationSubmit}
         />
       )}
 
@@ -1234,8 +1212,8 @@ function App() {
           toStatusClassName={toStatusClassName}
           onCreateConsultantDeal={handleConsultantDealCreate}
           onCreateConsultantActivity={handleConsultantActivityCreate}
-          onSaveConsultantPipeline={handleConsultantPipelineSave}
           onUpdateConsultantLeadStatus={handleConsultantLeadStatusUpdate}
+          onSaveConsultantPipeline={handleConsultantPipelineSave}
           onConsultantLogin={handleConsultantLogin}
           onConsultantLogout={handleConsultantLogout}
           onToggleTheme={toggleThemeMode}

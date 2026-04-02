@@ -89,7 +89,7 @@ const fixedPlans: PartnerPlan[] = [
 const enterprisePlan = {
   slug: "enterprise",
   name: "Enterprise",
-  price: "Sob consulta",
+  price: "Personalizado",
   footnote: "escopo variável",
   savings: "Projeto sob medida para posicionamento e demanda",
   cta: "Falar com o time",
@@ -131,7 +131,7 @@ export function PartnerPitchScreen({
 
   const selectedPlanPriceLabel =
     selectedPlanSlug === "enterprise"
-      ? "Sob consulta"
+      ? "Personalizado"
       : billingCycle === "Mensal"
         ? selectedFixedPlan.monthlyPrice
         : selectedFixedPlan.annualPrice;
@@ -210,10 +210,10 @@ export function PartnerPitchScreen({
       <section className="partner-pricing-surface">
         <div className="partner-pricing-header">
           <div className="partner-pricing-header-copy">
-            <h2>Gratuito até você decidir dar um passo adiante</h2>
+            <h2>Escolha o plano que acompanha o ritmo da sua operação</h2>
             <p>
-              Observe primeiro como a rede funciona e, em seguida, escolha o plano que mais faz sentido para o seu
-              momento comercial.
+              Compare os formatos de entrada da rede e selecione o plano mais aderente ao momento comercial do seu
+              parceiro.
             </p>
           </div>
 
@@ -305,7 +305,11 @@ export function PartnerPitchScreen({
             })}
 
             <article
-              className={selectedPlanSlug === "enterprise" ? "partner-pricing-card active" : "partner-pricing-card"}
+              className={
+                selectedPlanSlug === "enterprise"
+                  ? "partner-pricing-card partner-pricing-card-enterprise active"
+                  : "partner-pricing-card partner-pricing-card-enterprise"
+              }
               onClick={() => setSelectedPlanSlug("enterprise")}
               role="button"
               tabIndex={0}
