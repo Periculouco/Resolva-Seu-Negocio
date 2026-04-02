@@ -40,9 +40,10 @@ import {
 import { listAgendaByInstance } from "./lib/repositories/agendaRepository";
 import { createActivity } from "./lib/repositories/activitiesRepository";
 import { trackEvent } from "./lib/repositories/eventsRepository";
-import { createLead, listLeadsByInstance } from "./lib/repositories/leadsRepository";
+import { createLead, listLeadsByInstance, updateLeadStatus } from "./lib/repositories/leadsRepository";
 import {
   getCurrentPartnerProfile,
+  updatePartnerPipelineNameByProfileId,
   updateCurrentPartnerPipelineName,
 } from "./lib/repositories/partnerProfileRepository";
 import { supabase } from "./lib/supabase";
@@ -911,7 +912,9 @@ function App() {
       };
     }
 
-    const result = await updateCurrentPartnerPipelineName(pipelineName);
+    const result = partnerProfile?.id
+      ? await updatePartnerPipelineNameByProfileId(partnerProfile.id, pipelineName)
+      : await updateCurrentPartnerPipelineName(pipelineName);
 
     if (!result.success) {
       return {
@@ -921,6 +924,59 @@ function App() {
     }
 
     setPartnerProfile(result.data);
+
+    return {
+      success: true,
+      error: null,
+    };
+  };
+
+  const handleConsultantLeadStatusUpdate = async (
+    leadId: string,
+    status: ConsultantLead["status"],
+  ) => {
+    if (!consultantSession) {
+      return {
+        success: false,
+        error: "Não foi possível identificar a sessão do parceiro.",
+      };
+    }
+
+    const profileResult = await resolveCurrentPartnerProfile();
+
+    if (!profileResult.success) {
+      return {
+        success: false,
+        error: profileResult.error,
+      };
+    }
+
+    const instanceSlug = profileResult.data.instance_slug;
+    const updateResult = await updateLeadStatus(leadId, status, instanceSlug);
+
+    if (!updateResult.success) {
+      return {
+        success: false,
+        error: updateResult.error,
+      };
+    }
+
+    const refreshResult = await refreshConsultantLeads(instanceSlug);
+
+    if (!refreshResult.success) {
+      setConsultantLeads((current) =>
+        current.map((lead) =>
+          lead.id === leadId
+            ? {
+                ...lead,
+                status,
+                updatedAtIso: updateResult.data.updated_at,
+                updatedAt: formatLeadTimestamp(updateResult.data.updated_at),
+              }
+            : lead,
+        ),
+      );
+    }
 
     return {
       success: true,
@@ -1135,6 +1191,7 @@ function App() {
           onCreateConsultantDeal={handleConsultantDealCreate}
           onCreateConsultantActivity={handleConsultantActivityCreate}
           onSaveConsultantPipeline={handleConsultantPipelineSave}
+          onUpdateConsultantLeadStatus={handleConsultantLeadStatusUpdate}
           onConsultantLogin={handleConsultantLogin}
           onConsultantLogout={handleConsultantLogout}
           onToggleTheme={toggleThemeMode}

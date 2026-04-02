@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ChangeEventHandler, FormEventHandler, MouseEventHandler } from "react";
+import type { ChangeEventHandler, DragEventHandler, FormEventHandler, MouseEventHandler } from "react";
 
 import { listActivitiesByLead } from "../../lib/repositories/activitiesRepository";
 import type { ConsultantAgendaItem, ConsultantLead, ConsultantSection } from "../../types/domain";
@@ -66,6 +66,13 @@ type ConsultorScreenProps = {
     success: boolean;
     error?: string | null;
   }>;
+  onUpdateConsultantLeadStatus: (
+    leadId: string,
+    status: ConsultantLead["status"],
+  ) => Promise<{
+    success: boolean;
+    error?: string | null;
+  }>;
   onConsultantLogin: FormEventHandler<HTMLFormElement>;
   onConsultantLogout: () => void;
   onToggleTheme: () => void;
@@ -92,6 +99,7 @@ export function ConsultorScreen({
   onCreateConsultantDeal,
   onCreateConsultantActivity,
   onSaveConsultantPipeline,
+  onUpdateConsultantLeadStatus,
   onConsultantLogin,
   onConsultantLogout,
   onToggleTheme,
@@ -115,6 +123,10 @@ export function ConsultorScreen({
   const [leadActivitiesLoading, setLeadActivitiesLoading] = useState(false);
   const [pipelineNameDraft, setPipelineNameDraft] = useState(consultantPipelineName);
   const [hoveredStageLabel, setHoveredStageLabel] = useState<string | null>(null);
+  const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
+  const [dragTargetStatus, setDragTargetStatus] = useState<ConsultantLead["status"] | null>(null);
+  const [isUpdatingLeadStatus, setIsUpdatingLeadStatus] = useState(false);
+  const [kanbanStatusMessage, setKanbanStatusMessage] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState({
     title: "",
     dueDate: "",
@@ -246,6 +258,22 @@ export function ConsultorScreen({
       funnel: consultantPipelineName,
     }));
   }, [consultantPipelineName]);
+
+  useEffect(() => {
+    if (!selectedLead) {
+      return;
+    }
+
+    const updatedLead = consultantLeads.find((lead) => lead.id === selectedLead.id);
+
+    if (!updatedLead) {
+      return;
+    }
+
+    if (updatedLead !== selectedLead) {
+      setSelectedLead(updatedLead);
+    }
+  }, [consultantLeads, selectedLead]);
 
   useEffect(() => {
     if (!selectedLead || !consultantInstanceSlug) {
@@ -545,6 +573,67 @@ export function ConsultorScreen({
     );
 
     window.open(`https://wa.me/${digits}?text=${message}`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleLeadDragStart =
+    (lead: ConsultantLead): DragEventHandler<HTMLButtonElement> =>
+    (event) => {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", lead.id);
+      setDraggingLeadId(lead.id);
+      setKanbanStatusMessage(null);
+    };
+
+  const handleColumnDragOver =
+    (status: ConsultantLead["status"]): DragEventHandler<HTMLElement> =>
+    (event) => {
+      if (!draggingLeadId) {
+        return;
+      }
+
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setDragTargetStatus(status);
+    };
+
+  const handleColumnDrop =
+    (status: ConsultantLead["status"]): DragEventHandler<HTMLElement> =>
+    async (event) => {
+      event.preventDefault();
+
+      const draggedLeadId = event.dataTransfer.getData("text/plain") || draggingLeadId;
+
+      setDragTargetStatus(null);
+      setDraggingLeadId(null);
+
+      if (!draggedLeadId) {
+        return;
+      }
+
+      const draggedLead = consultantLeads.find((lead) => lead.id === draggedLeadId);
+
+      if (!draggedLead || draggedLead.status === status) {
+        return;
+      }
+
+      setIsUpdatingLeadStatus(true);
+      setKanbanStatusMessage(null);
+
+      const result = await onUpdateConsultantLeadStatus(draggedLeadId, status);
+
+      setIsUpdatingLeadStatus(false);
+
+      if (!result.success) {
+        setKanbanStatusMessage(result.error ?? "Não foi possível mover o lead agora.");
+        return;
+      }
+
+      setKanbanStatusMessage(`Lead movido para ${pipelineColumns.find((column) => column.id === status)?.label ?? status}.`);
+    };
+
+  const handleDragEnd = () => {
+    setDraggingLeadId(null);
+    setDragTargetStatus(null);
   };
 
   const lineChartPath = useMemo(() => {
@@ -1318,6 +1407,7 @@ export function ConsultorScreen({
                   <h2>Kanban comercial</h2>
                   <span>{visibleLeadCount} leads no pipeline</span>
                 </div>
+                {kanbanStatusMessage ? <p className="consultant-kanban-feedback">{kanbanStatusMessage}</p> : null}
                 <div className="consultant-kanban-toolbar">
                   <div className="consultant-kanban-toolbar-group">
                     <button className="consultant-toolbar-icon active" type="button" aria-label="Visualização em kanban">
@@ -1357,7 +1447,21 @@ export function ConsultorScreen({
                 ) : (
                   <div className="consultant-pipeline-board">
                     {leadsByStatus.map((column) => (
-                      <section className="consultant-pipeline-column" key={column.id}>
+                      <section
+                        className={
+                          dragTargetStatus === column.id
+                            ? "consultant-pipeline-column consultant-pipeline-column-drop-target"
+                            : "consultant-pipeline-column"
+                        }
+                        key={column.id}
+                        onDragOver={handleColumnDragOver(column.id)}
+                        onDrop={handleColumnDrop(column.id)}
+                        onDragLeave={() => {
+                          if (dragTargetStatus === column.id) {
+                            setDragTargetStatus(null);
+                          }
+                        }}
+                      >
                         <div className="consultant-pipeline-column-header">
                           <div>
                             <strong>{column.label}</strong>
@@ -1382,9 +1486,16 @@ export function ConsultorScreen({
                           ) : (
                             column.leads.map((lead) => (
                                 <button
-                                  className="consultant-pipeline-card"
+                                  className={
+                                    draggingLeadId === lead.id
+                                      ? "consultant-pipeline-card consultant-pipeline-card-dragging"
+                                      : "consultant-pipeline-card"
+                                  }
                                   key={lead.id}
                                   type="button"
+                                  draggable={!isUpdatingLeadStatus}
+                                  onDragStart={handleLeadDragStart(lead)}
+                                  onDragEnd={handleDragEnd}
                                   onClick={() => setSelectedLead(lead)}
                                 >
                                   <span
