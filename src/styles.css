@@ -4168,6 +4168,619 @@ button {
   align-content: start;
 }
 
+.consultant-reference-dashboard {
+  display: block;
+  min-height: 940px;
+  border-radius: 32px;
+  overflow: hidden;
+  border: 1px solid rgba(106, 126, 160, 0.2);
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 28%),
+    linear-gradient(180deg, #182033 0%, #131a2b 100%);
+  box-shadow:
+    0 32px 70px rgba(8, 12, 22, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.consultant-reference-dashboard-dark {
+  background:
+    radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 28%),
+    linear-gradient(180deg, #182033 0%, #131a2b 100%);
+}
+
+.consultant-reference-dashboard-light {
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.08), transparent 28%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  border-color: rgba(210, 220, 235, 0.95);
+  box-shadow:
+    0 22px 48px rgba(124, 145, 173, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.consultant-reference-sidebar {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 30px;
+  padding: 32px 26px;
+  background: rgba(31, 40, 58, 0.82);
+  border-right: 1px solid rgba(111, 129, 160, 0.16);
+}
+
+.consultant-reference-dashboard-light .consultant-reference-sidebar {
+  background: rgba(236, 242, 249, 0.82);
+  border-right-color: rgba(205, 216, 232, 0.92);
+}
+
+.consultant-reference-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.consultant-reference-brand-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f3f7f9 0%, #d8e3e8 100%);
+  color: #1a2235;
+  font-weight: 900;
+}
+
+.consultant-reference-brand strong,
+.consultant-reference-card strong,
+.consultant-reference-kpi-card strong,
+.consultant-reference-list-item strong {
+  color: #f2f6fb;
+}
+
+.consultant-reference-brand span,
+.consultant-reference-card span,
+.consultant-reference-kpi-card span,
+.consultant-reference-kpi-card small,
+.consultant-reference-list-item span,
+.consultant-reference-list-item small,
+.consultant-reference-nav-item,
+.consultant-reference-sidebar-footer span,
+.consultant-reference-sidebar-footer small {
+  color: #97a2b5;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-brand strong,
+.consultant-reference-dashboard-light .consultant-reference-card strong,
+.consultant-reference-dashboard-light .consultant-reference-kpi-card strong,
+.consultant-reference-dashboard-light .consultant-reference-list-item strong,
+.consultant-reference-dashboard-light .consultant-reference-header h2 {
+  color: #1f2b3d;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-brand span,
+.consultant-reference-dashboard-light .consultant-reference-card span,
+.consultant-reference-dashboard-light .consultant-reference-kpi-card span,
+.consultant-reference-dashboard-light .consultant-reference-kpi-card small,
+.consultant-reference-dashboard-light .consultant-reference-list-item span,
+.consultant-reference-dashboard-light .consultant-reference-list-item small,
+.consultant-reference-dashboard-light .consultant-reference-nav-item,
+.consultant-reference-dashboard-light .consultant-reference-sidebar-footer span,
+.consultant-reference-dashboard-light .consultant-reference-sidebar-footer small,
+.consultant-reference-dashboard-light .consultant-reference-header span,
+.consultant-reference-dashboard-light .consultant-reference-donut-center span,
+.consultant-reference-dashboard-light .consultant-reference-donut-stat small,
+.consultant-reference-dashboard-light .consultant-reference-card-header span,
+.consultant-reference-dashboard-light .consultant-reference-chart-axis,
+.consultant-reference-dashboard-light .consultant-reference-chart-labels span,
+.consultant-reference-dashboard-light .consultant-reference-bar-group small {
+  color: #718097;
+}
+
+.consultant-reference-nav {
+  display: grid;
+  gap: 10px;
+}
+
+.consultant-reference-nav-item {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.consultant-reference-nav-item.active {
+  background: rgba(72, 82, 104, 0.62);
+  border-color: rgba(127, 143, 170, 0.18);
+  color: #ffffff;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-nav-item.active {
+  background: rgba(249, 115, 22, 0.1);
+  border-color: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+}
+
+.consultant-reference-sidebar-footer {
+  align-self: end;
+  display: grid;
+  gap: 6px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(111, 129, 160, 0.16);
+}
+
+.consultant-reference-sidebar-footer strong {
+  color: #eef5ff;
+  font-size: 1.12rem;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-sidebar-footer strong {
+  color: #223146;
+}
+
+.consultant-reference-main {
+  display: grid;
+  gap: 20px;
+  padding: 30px 34px 34px;
+}
+
+.consultant-reference-main-full {
+  width: 100%;
+}
+
+.consultant-reference-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.consultant-reference-header h2 {
+  margin: 0;
+  color: #f4f7fb;
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.consultant-reference-overline {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #c4ccd8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.consultant-reference-header span {
+  color: #98a3b6;
+}
+
+.consultant-reference-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.consultant-reference-circle,
+.consultant-reference-avatar {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(123, 141, 171, 0.18);
+  background: rgba(18, 26, 43, 0.68);
+  color: #f2f6fb;
+  font-size: 1.05rem;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-circle,
+.consultant-reference-dashboard-light .consultant-reference-avatar {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(205, 216, 232, 0.95);
+  color: #223146;
+}
+
+.consultant-reference-avatar {
+  background: linear-gradient(180deg, #41506d 0%, #1e293b 100%);
+  font-weight: 800;
+}
+
+.consultant-reference-top-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.consultant-reference-top-stat {
+  display: grid;
+  gap: 8px;
+  min-height: 92px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(107, 126, 158, 0.2);
+  background: rgba(18, 26, 43, 0.74);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.consultant-reference-dashboard-light .consultant-reference-top-stat,
+.consultant-reference-dashboard-light .consultant-reference-card {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(210, 220, 235, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 24px rgba(168, 185, 209, 0.12);
+}
+
+.consultant-reference-top-stat span {
+  color: #97a2b5;
+  font-size: 0.92rem;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-top-stat span {
+  color: #718097;
+}
+
+.consultant-reference-top-stat strong {
+  color: #f2f6fb;
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-top-stat strong {
+  color: #1f2b3d;
+}
+
+.consultant-reference-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.72fr) minmax(350px, 0.68fr);
+  grid-template-areas:
+    "line donut"
+    "spark donut"
+    "bars list";
+  gap: 20px;
+}
+
+.consultant-reference-card {
+  display: grid;
+  gap: 18px;
+  padding: 22px 22px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(104, 124, 156, 0.28);
+  background: rgba(17, 24, 39, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 0 rgba(255, 255, 255, 0.02);
+}
+
+.consultant-reference-card-chart {
+  grid-area: line;
+}
+
+.consultant-reference-card-donut {
+  grid-area: donut;
+  align-content: start;
+  grid-template-rows: auto 1fr;
+}
+
+.consultant-reference-card-spark {
+  grid-area: spark;
+}
+
+.consultant-reference-card-bars {
+  grid-area: bars;
+}
+
+.consultant-reference-card-list {
+  grid-area: list;
+}
+
+.consultant-reference-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.consultant-reference-card-header strong {
+  font-size: 0.98rem;
+}
+
+.consultant-reference-card-highlight {
+  font-size: 0.98rem;
+  letter-spacing: 0.02em;
+}
+
+.consultant-reference-line-chart svg {
+  width: 100%;
+  height: 420px;
+  overflow: visible;
+}
+
+.consultant-reference-chart-gridline {
+  fill: none;
+  stroke: rgba(159, 176, 201, 0.18);
+  stroke-dasharray: 6 8;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-chart-gridline,
+.consultant-reference-dashboard-light .consultant-reference-sparkline-grid {
+  stroke: rgba(157, 172, 196, 0.26);
+}
+
+.consultant-reference-chart-axis {
+  fill: #8d9aad;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.consultant-reference-chart-area {
+  fill: url(#consultantReferenceLineGradient);
+}
+
+.consultant-reference-chart-line {
+  fill: none;
+  stroke: #d8ecf3;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 8px 22px rgba(216, 236, 243, 0.18));
+}
+
+.consultant-reference-dashboard-light .consultant-reference-chart-line {
+  stroke: #334155;
+  filter: drop-shadow(0 8px 18px rgba(148, 163, 184, 0.16));
+}
+
+.consultant-reference-chart-guide {
+  fill: none;
+  stroke: rgba(208, 218, 230, 0.34);
+  stroke-width: 2;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-chart-guide {
+  stroke: rgba(100, 116, 139, 0.22);
+}
+
+.consultant-reference-chart-peak {
+  fill: #f3fbff;
+  stroke: rgba(227, 242, 247, 0.7);
+  stroke-width: 6;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-chart-peak {
+  fill: #ffffff;
+  stroke: rgba(249, 115, 22, 0.32);
+}
+
+.consultant-reference-chart-tooltip {
+  fill: #8d96ab;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-chart-tooltip {
+  fill: #334155;
+}
+
+.consultant-reference-chart-tooltip-main,
+.consultant-reference-chart-tooltip-sub {
+  fill: #ffffff;
+  text-anchor: middle;
+  font-weight: 700;
+}
+
+.consultant-reference-chart-tooltip-main {
+  font-size: 0.86rem;
+}
+
+.consultant-reference-chart-tooltip-sub {
+  font-size: 0.72rem;
+  opacity: 0.88;
+}
+
+.consultant-reference-chart-labels {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  padding-left: 72px;
+  margin-top: -4px;
+}
+
+.consultant-reference-chart-labels span,
+.consultant-reference-bar-group small {
+  color: #8f9aae;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.consultant-reference-donut-shell {
+  display: grid;
+  gap: 22px;
+}
+
+.consultant-reference-donut-chart {
+  position: relative;
+  width: 100%;
+  max-width: 256px;
+  aspect-ratio: 1;
+  justify-self: center;
+}
+
+.consultant-reference-donut-chart svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.consultant-reference-donut-track,
+.consultant-reference-donut-segment {
+  fill: none;
+  stroke-width: 20;
+}
+
+.consultant-reference-donut-track {
+  stroke: rgba(132, 145, 167, 0.32);
+}
+
+.consultant-reference-dashboard-light .consultant-reference-donut-track {
+  stroke: rgba(203, 213, 225, 0.72);
+}
+
+.consultant-reference-donut-segment {
+  cursor: pointer;
+  transition: transform 160ms ease, opacity 160ms ease, stroke-width 160ms ease;
+}
+
+.consultant-reference-donut-segment.active {
+  stroke-width: 22;
+}
+
+.consultant-reference-donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.consultant-reference-donut-center strong {
+  font-size: 2rem;
+}
+
+.consultant-reference-donut-center span {
+  color: #9aa6ba;
+}
+
+.consultant-reference-donut-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.consultant-reference-donut-stat {
+  display: grid;
+  gap: 8px;
+  padding: 16px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(104, 124, 156, 0.22);
+  background: rgba(29, 39, 58, 0.7);
+  text-align: left;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-donut-stat {
+  background: rgba(248, 250, 252, 0.92);
+  border-color: rgba(210, 220, 235, 0.92);
+}
+
+.consultant-reference-donut-stat:hover,
+.consultant-reference-donut-stat.active {
+  border-color: rgba(212, 228, 238, 0.28);
+  transform: translateY(-1px);
+}
+
+.consultant-reference-donut-stat-line {
+  width: 3px;
+  height: 18px;
+  border-radius: 999px;
+}
+
+.consultant-reference-donut-stat small {
+  color: #9ca9bb;
+}
+
+.consultant-reference-sparkline svg {
+  width: 100%;
+  height: 250px;
+}
+
+.consultant-reference-sparkline-grid {
+  fill: none;
+  stroke: rgba(110, 124, 149, 0.18);
+}
+
+.consultant-reference-sparkline-path {
+  fill: none;
+  stroke: #e8f2fb;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.consultant-reference-bar-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: end;
+  gap: 14px;
+  min-height: 250px;
+}
+
+.consultant-reference-bar-group {
+  display: grid;
+  justify-items: center;
+  align-items: end;
+  gap: 8px;
+}
+
+.consultant-reference-bar {
+  width: 12px;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(12, 18, 30, 0.2);
+}
+
+.consultant-reference-bar-blue {
+  background: linear-gradient(180deg, #dff0f7 0%, #c4dbe8 100%);
+}
+
+.consultant-reference-bar-orange {
+  background: linear-gradient(180deg, #ffd49b 0%, #ffc16d 100%);
+}
+
+.consultant-reference-list-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(56, 68, 92, 0.88);
+  color: #b6c0d0;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-list-head {
+  background: rgba(239, 244, 250, 0.96);
+  color: #607086;
+}
+
+.consultant-reference-list {
+  display: grid;
+  gap: 14px;
+}
+
+.consultant-reference-list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(104, 124, 156, 0.18);
+  background: rgba(29, 39, 58, 0.58);
+}
+
+.consultant-reference-list-item small {
+  color: #bcc7d8;
+}
+
+.consultant-reference-dashboard-light .consultant-reference-list-item {
+  background: rgba(248, 250, 252, 0.92);
+  border-color: rgba(210, 220, 235, 0.92);
+}
+
 .consultant-focus-card,
 .consultant-empty-card {
   display: grid;
@@ -4706,6 +5319,31 @@ button {
     grid-template-columns: 1fr;
     justify-items: center;
   }
+
+  .consultant-reference-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .consultant-reference-sidebar {
+    grid-template-rows: auto;
+    gap: 18px;
+    border-right: none;
+    border-bottom: 1px solid rgba(111, 129, 160, 0.16);
+  }
+
+  .consultant-reference-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .consultant-reference-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "line"
+      "donut"
+      "spark"
+      "bars"
+      "list";
+  }
 }
 
 @media (max-width: 860px) {
@@ -4868,6 +5506,25 @@ button {
     grid-auto-columns: minmax(228px, 228px);
   }
 
+  .consultant-reference-main {
+    padding: 18px;
+  }
+
+  .consultant-reference-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .consultant-reference-kpis,
+  .consultant-reference-donut-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .consultant-reference-chart-labels {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding-left: 32px;
+  }
+
   .consultant-header h1 {
     max-width: none;
   }
@@ -4886,6 +5543,11 @@ button {
   }
 
   .consultant-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .consultant-reference-kpis,
+  .consultant-reference-donut-stats {
     grid-template-columns: 1fr;
   }
 

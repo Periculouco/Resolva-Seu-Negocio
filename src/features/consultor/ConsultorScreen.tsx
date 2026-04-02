@@ -637,38 +637,58 @@ export function ConsultorScreen({
   };
 
   const lineChartPath = useMemo(() => {
-    const width = 560;
-    const height = 240;
-    const paddingLeft = 44;
-    const paddingRight = 12;
-    const paddingTop = 12;
-    const paddingBottom = 28;
+    const width = 760;
+    const height = 320;
+    const paddingLeft = 54;
+    const paddingRight = 18;
+    const paddingTop = 22;
+    const paddingBottom = 42;
     const chartWidth = width - paddingLeft - paddingRight;
     const chartHeight = height - paddingTop - paddingBottom;
     const maxValue = Math.max(...dailyLeadSeries.map((item) => item.count), 1);
+    const points = dailyLeadSeries.map((item, index) => {
+      const x = paddingLeft + (index / Math.max(dailyLeadSeries.length - 1, 1)) * chartWidth;
+      const y = paddingTop + chartHeight - (item.count / maxValue) * chartHeight;
 
-    return dailyLeadSeries
-      .map((item, index) => {
-        const x = paddingLeft + (index / Math.max(dailyLeadSeries.length - 1, 1)) * chartWidth;
-        const y = paddingTop + chartHeight - (item.count / maxValue) * chartHeight;
+      return { x, y };
+    });
 
-        return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
-      })
-      .join(" ");
+    if (points.length === 0) {
+      return "";
+    }
+
+    if (points.length === 1) {
+      return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    }
+
+    const segments = points.map((point, index) => {
+      if (index === 0) {
+        return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+      }
+
+      const previous = points[index - 1];
+      const midpointX = (previous.x + point.x) / 2;
+
+      return `C ${midpointX.toFixed(2)} ${previous.y.toFixed(2)}, ${midpointX.toFixed(2)} ${point.y.toFixed(
+        2,
+      )}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+    });
+
+    return segments.join(" ");
   }, [dailyLeadSeries]);
   const lineChartMetrics = useMemo(() => {
-    const width = 560;
-    const height = 240;
-    const paddingLeft = 44;
-    const paddingRight = 12;
-    const paddingTop = 12;
-    const paddingBottom = 28;
+    const width = 760;
+    const height = 320;
+    const paddingLeft = 54;
+    const paddingRight = 18;
+    const paddingTop = 22;
+    const paddingBottom = 42;
     const chartWidth = width - paddingLeft - paddingRight;
     const chartHeight = height - paddingTop - paddingBottom;
     const maxValue = Math.max(...dailyLeadSeries.map((item) => item.count), 1);
-    const tickBase = Math.max(maxValue, 3);
-    const ticks = Array.from(new Set([0, Math.ceil(tickBase / 3), Math.ceil((tickBase * 2) / 3), tickBase])).sort(
-      (a, b) => a - b,
+    const tickBase = Math.max(maxValue, 4);
+    const ticks = Array.from({ length: 5 }, (_, index) =>
+      Math.round((tickBase / 4) * (4 - index)),
     );
 
     const points = dailyLeadSeries.map((item, index) => {
@@ -682,9 +702,14 @@ export function ConsultorScreen({
       };
     });
 
-    const areaPath = `${lineChartPath} L ${paddingLeft + chartWidth} ${paddingTop + chartHeight} L ${paddingLeft} ${
-      paddingTop + chartHeight
-    } Z`;
+    const lastPoint = points[points.length - 1];
+    const firstPoint = points[0];
+    const areaPath =
+      points.length > 0
+        ? `${lineChartPath} L ${lastPoint?.x ?? paddingLeft} ${paddingTop + chartHeight} L ${
+            firstPoint?.x ?? paddingLeft
+          } ${paddingTop + chartHeight} Z`
+        : "";
 
     const gridLines = ticks.map((tick) => {
       const y = paddingTop + chartHeight - (tick / maxValue) * chartHeight;
@@ -694,6 +719,15 @@ export function ConsultorScreen({
         y,
       };
     });
+
+    const peakPoint =
+      points.reduce<(typeof points)[number] | null>((currentPeak, point) => {
+        if (!currentPeak || point.count >= currentPeak.count) {
+          return point;
+        }
+
+        return currentPeak;
+      }, null) ?? points[0] ?? null;
 
     return {
       width,
@@ -706,8 +740,47 @@ export function ConsultorScreen({
       ticks,
       gridLines,
       areaPath,
+      peakPoint,
     };
   }, [dailyLeadSeries, lineChartPath]);
+  const sparklinePath = useMemo(() => {
+    const width = 420;
+    const height = 220;
+    const paddingX = 28;
+    const paddingY = 18;
+    const chartWidth = width - paddingX * 2;
+    const chartHeight = height - paddingY * 2;
+    const maxValue = Math.max(...dailyLeadSeries.map((item) => item.count), 1);
+    const points = dailyLeadSeries.map((item, index) => {
+      const x = paddingX + (index / Math.max(dailyLeadSeries.length - 1, 1)) * chartWidth;
+      const y = paddingY + chartHeight - (item.count / maxValue) * chartHeight;
+
+      return { x, y };
+    });
+
+    if (points.length === 0) {
+      return "";
+    }
+
+    if (points.length === 1) {
+      return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    }
+
+    return points
+      .map((point, index) => {
+        if (index === 0) {
+          return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+        }
+
+        const previous = points[index - 1];
+        const midpointX = (previous.x + point.x) / 2;
+
+        return `C ${midpointX.toFixed(2)} ${previous.y.toFixed(2)}, ${midpointX.toFixed(2)} ${point.y.toFixed(
+          2,
+        )}, ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+      })
+      .join(" ");
+  }, [dailyLeadSeries]);
 
   return (
     <main className="consultant-layout">
@@ -1167,238 +1240,267 @@ export function ConsultorScreen({
                 </div>
               </section>
             ) : consultantSection === "dashboard" && (
-              <>
-                <div className="consultant-stats-grid">
-                  <article className="consultant-stat-card">
-                    <span>Leads recebidos hoje</span>
-                    <strong>{consultantStats[0]?.value ?? "00"}</strong>
-                    <small>Entradas novas do diagnóstico e formulário</small>
-                  </article>
-                  <article className="consultant-stat-card consultant-stat-card-warm">
-                    <span>Em andamento</span>
-                    <strong>{contactedCount.toString().padStart(2, "0")}</strong>
-                    <small>Leads em follow-up comercial</small>
-                  </article>
-                  <article className="consultant-stat-card consultant-stat-card-success">
-                    <span>Leads fechados</span>
-                    <strong>{qualifiedCount.toString().padStart(2, "0")}</strong>
-                    <small>Qualificados e reuniões em fase final</small>
-                  </article>
-                  <article className="consultant-stat-card">
-                    <span>Taxa de conversão</span>
-                    <strong>{conversionRate}%</strong>
-                    <small>Percentual da base ativa com avanço real</small>
-                  </article>
-                </div>
-
-                <div className="consultant-dashboard-grid">
-                  <section className="consultant-panel">
-                    <div className="consultant-panel-header">
-                      <h2>Receita e andamento</h2>
-                      <span>Leitura rápida do pipeline</span>
+              <section
+                className={
+                  themeMode === "dark"
+                    ? "consultant-reference-dashboard consultant-reference-dashboard-dark"
+                    : "consultant-reference-dashboard consultant-reference-dashboard-light"
+                }
+              >
+                <div className="consultant-reference-main consultant-reference-main-full">
+                  <div className="consultant-reference-header">
+                    <div>
+                      <span className="consultant-reference-overline">Painel comercial</span>
+                      <h2>Dashboard operacional</h2>
+                      <span>Leitura da operação, do funil e da agenda da instância.</span>
                     </div>
-                    <div className="consultant-chart-grid">
-                      <article className="consultant-chart-card">
-                        <div className="consultant-chart-card-header">
-                          <strong>Entradas por data</strong>
-                          <span>
-                            {dailyLeadSeries.reduce((total, item) => total + item.count, 0)} leads no período · pico de {maxDailyLeadCount}
-                          </span>
+                    <div className="consultant-reference-header-actions">
+                      <button className="consultant-reference-circle" type="button" aria-label="Buscar">
+                        ⌕
+                      </button>
+                      <button className="consultant-reference-circle" type="button" aria-label="Notificações">
+                        •
+                      </button>
+                      <button className="consultant-reference-avatar" type="button" aria-label="Perfil">
+                        {(consultantInstanceSlug?.slice(0, 1) || "R").toUpperCase()}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="consultant-reference-top-stats">
+                    <article className="consultant-reference-top-stat">
+                      <span>Leads recebidos</span>
+                      <strong>{consultantStats[0]?.value ?? "00"}</strong>
+                    </article>
+                    <article className="consultant-reference-top-stat">
+                      <span>Em negociação</span>
+                      <strong>{qualifiedCount.toString().padStart(2, "0")}</strong>
+                    </article>
+                    <article className="consultant-reference-top-stat">
+                      <span>Pipeline ativo</span>
+                      <strong>{openPipelineCount.toString().padStart(2, "0")}</strong>
+                    </article>
+                    <article className="consultant-reference-top-stat">
+                      <span>Conversão</span>
+                      <strong>{conversionRate}%</strong>
+                    </article>
+                  </div>
+
+                  <div className="consultant-reference-grid">
+                    <article className="consultant-reference-card consultant-reference-card-chart">
+                      <div className="consultant-reference-card-header">
+                        <div>
+                          <strong>Entradas do pipeline</strong>
+                          <span>Últimos 7 dias</span>
                         </div>
-                        <div className="consultant-line-chart consultant-line-chart-expanded">
-                          <svg viewBox={`0 0 ${lineChartMetrics.width} ${lineChartMetrics.height}`} aria-hidden="true">
-                            <defs>
-                              <linearGradient id="consultantLineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stopColor="rgba(249, 115, 22, 0.24)" />
-                                <stop offset="100%" stopColor="rgba(249, 115, 22, 0)" />
-                              </linearGradient>
-                            </defs>
-                            {lineChartMetrics.gridLines.map((line) => (
-                              <g key={line.tick}>
-                                <path
-                                  className="consultant-line-chart-gridline"
-                                  d={`M ${lineChartMetrics.paddingLeft} ${line.y} H ${
-                                    lineChartMetrics.paddingLeft + lineChartMetrics.chartWidth
-                                  }`}
-                                />
-                                <text className="consultant-line-chart-axis-label" x="0" y={line.y + 4}>
-                                  {line.tick}
+                        <strong className="consultant-reference-card-highlight">
+                          {dailyLeadSeries.reduce((total, item) => total + item.count, 0).toString().padStart(2, "0")}
+                        </strong>
+                      </div>
+
+                      <div className="consultant-reference-line-chart">
+                        <svg viewBox={`0 0 ${lineChartMetrics.width} ${lineChartMetrics.height}`} aria-hidden="true">
+                          <defs>
+                            <linearGradient id="consultantReferenceLineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="rgba(223, 239, 245, 0.74)" />
+                              <stop offset="60%" stopColor="rgba(166, 185, 198, 0.34)" />
+                              <stop offset="100%" stopColor="rgba(20, 28, 48, 0)" />
+                            </linearGradient>
+                          </defs>
+                          {lineChartMetrics.gridLines.map((line) => (
+                            <g key={line.tick}>
+                              <path
+                                className="consultant-reference-chart-gridline"
+                                d={`M ${lineChartMetrics.paddingLeft} ${line.y} H ${
+                                  lineChartMetrics.paddingLeft + lineChartMetrics.chartWidth
+                                }`}
+                              />
+                              <text className="consultant-reference-chart-axis" x="0" y={line.y + 4}>
+                                {line.tick}
+                              </text>
+                            </g>
+                          ))}
+                          <path className="consultant-reference-chart-area" d={lineChartMetrics.areaPath} />
+                          <path className="consultant-reference-chart-line" d={lineChartPath} />
+                          {lineChartMetrics.peakPoint ? (
+                            <>
+                              <path
+                                className="consultant-reference-chart-guide"
+                                d={`M ${lineChartMetrics.peakPoint.x} ${lineChartMetrics.peakPoint.y} V ${
+                                  lineChartMetrics.paddingTop + lineChartMetrics.chartHeight
+                                }`}
+                              />
+                              <circle
+                                className="consultant-reference-chart-peak"
+                                cx={lineChartMetrics.peakPoint.x}
+                                cy={lineChartMetrics.peakPoint.y}
+                                r="8"
+                              />
+                              <g
+                                transform={`translate(${lineChartMetrics.peakPoint.x - 54}, ${
+                                  lineChartMetrics.peakPoint.y - 66
+                                })`}
+                              >
+                                <rect className="consultant-reference-chart-tooltip" width="108" height="46" rx="12" />
+                                <text className="consultant-reference-chart-tooltip-main" x="54" y="18">
+                                  {lineChartMetrics.peakPoint.count.toString().padStart(2, "0")} leads
+                                </text>
+                                <text className="consultant-reference-chart-tooltip-sub" x="54" y="34">
+                                  pico do período
                                 </text>
                               </g>
-                            ))}
-                            <path className="consultant-line-chart-area" d={lineChartMetrics.areaPath} />
-                            <path className="consultant-line-chart-path" d={lineChartPath} />
-                            {lineChartMetrics.points.map((item) => {
-                              return (
-                                <g key={item.label}>
-                                  <circle className="consultant-line-chart-dot" cx={item.x} cy={item.y} r="4" />
-                                  <text className="consultant-line-chart-value" x={item.x} y={item.y - 12}>
-                                    {item.count}
-                                  </text>
-                                </g>
-                              );
-                            })}
-                          </svg>
-                          <div className="consultant-line-chart-labels">
-                            {dailyLeadSeries.map((item) => (
-                              <span key={item.label}>{item.label}</span>
-                            ))}
-                          </div>
+                            </>
+                          ) : null}
+                        </svg>
+                        <div className="consultant-reference-chart-labels">
+                          {dailyLeadSeries.map((item) => (
+                            <span key={item.label}>{item.label}</span>
+                          ))}
                         </div>
-                      </article>
-                      <article className="consultant-chart-card">
-                        <div className="consultant-chart-card-header">
-                          <strong>Distribuição por etapa</strong>
-                          <span>{totalStageCount.toString().padStart(2, "0")} leads no pipeline</span>
-                        </div>
-                        <div className="consultant-donut-card">
-                          <div className="consultant-donut-chart">
-                            <svg viewBox="0 0 140 140" aria-hidden="true">
-                              <circle className="consultant-donut-track" cx="70" cy="70" r="52" />
-                              {donutSegments.map((segment) => (
-                                <circle
-                                  key={segment.label}
-                                  className={
-                                    activeDonutStage?.label === segment.label
-                                      ? "consultant-donut-segment active"
-                                      : "consultant-donut-segment"
-                                  }
-                                  cx="70"
-                                  cy="70"
-                                  r="52"
-                                  stroke={segment.color}
-                                  strokeDasharray={`${segment.length} ${segment.circumference - segment.length}`}
-                                  strokeDashoffset={segment.offset}
-                                  onMouseEnter={() => setHoveredStageLabel(segment.label)}
-                                  onMouseLeave={() => setHoveredStageLabel(null)}
-                                />
-                              ))}
-                            </svg>
-                            <div className="consultant-donut-center">
-                              <strong>{(activeDonutStage?.value ?? totalStageCount).toString().padStart(2, "0")}</strong>
-                              <span>{activeDonutStage?.label ?? "leads"}</span>
-                            </div>
-                          </div>
-                          <div className="consultant-donut-legend">
-                            {stageSeries.map((stage, index) => (
-                              <button
+                      </div>
+                    </article>
+
+                    <article className="consultant-reference-card consultant-reference-card-donut">
+                      <div className="consultant-reference-card-header">
+                        <strong>Distribuição do pipeline</strong>
+                        <span>Leitura atual</span>
+                      </div>
+                      <div className="consultant-reference-donut-shell">
+                        <div className="consultant-reference-donut-chart">
+                          <svg viewBox="0 0 160 160" aria-hidden="true">
+                            <circle className="consultant-reference-donut-track" cx="80" cy="80" r="58" />
+                            {donutSegments.map((segment) => (
+                              <circle
+                                key={segment.label}
                                 className={
-                                  activeDonutStage?.label === stage.label
-                                    ? "consultant-donut-legend-row active"
-                                    : "consultant-donut-legend-row"
+                                  activeDonutStage?.label === segment.label
+                                    ? "consultant-reference-donut-segment active"
+                                    : "consultant-reference-donut-segment"
                                 }
-                                key={stage.label}
-                                type="button"
-                                onMouseEnter={() => setHoveredStageLabel(stage.label)}
+                                cx="80"
+                                cy="80"
+                                r="58"
+                                stroke={segment.color}
+                                strokeDasharray={`${segment.length} ${segment.circumference - segment.length}`}
+                                strokeDashoffset={segment.offset}
+                                onMouseEnter={() => setHoveredStageLabel(segment.label)}
                                 onMouseLeave={() => setHoveredStageLabel(null)}
-                              >
-                                <span
-                                  className="consultant-donut-dot"
-                                  style={{ backgroundColor: donutSegments[index]?.color }}
-                                />
-                                <strong>{stage.label}</strong>
-                                <span>{stage.value.toString().padStart(2, "0")}</span>
-                              </button>
+                              />
                             ))}
+                          </svg>
+                          <div className="consultant-reference-donut-center">
+                            <strong>{(activeDonutStage?.value ?? totalStageCount).toString().padStart(2, "0")}</strong>
+                            <span>{activeDonutStage?.label ?? "Leads"}</span>
                           </div>
                         </div>
-                      </article>
-                    </div>
 
-                    <div className="consultant-dashboard-metrics">
-                      <article className="consultant-mini-dashboard-card">
-                        <span>Melhor etapa agora</span>
-                        <strong>{activeDonutStage?.label ?? "Novo lead"}</strong>
-                        <small>{(activeDonutStage?.value ?? 0).toString().padStart(2, "0")} leads nesta etapa</small>
-                      </article>
-                      <article className="consultant-mini-dashboard-card">
-                        <span>Novas entradas</span>
-                        <strong>
-                          {dailyLeadSeries[dailyLeadSeries.length - 1]?.count.toString().padStart(2, "0") ?? "00"}
+                        <div className="consultant-reference-donut-stats">
+                          {stageSeries.map((stage, index) => (
+                            <button
+                              className={
+                                activeDonutStage?.label === stage.label
+                                  ? "consultant-reference-donut-stat active"
+                                  : "consultant-reference-donut-stat"
+                              }
+                              key={stage.label}
+                              type="button"
+                              onMouseEnter={() => setHoveredStageLabel(stage.label)}
+                              onMouseLeave={() => setHoveredStageLabel(null)}
+                            >
+                              <span
+                                className="consultant-reference-donut-stat-line"
+                                style={{ backgroundColor: donutSegments[index]?.color }}
+                              />
+                              <strong>{stage.label}</strong>
+                              <small>{stage.value.toString().padStart(2, "0")} leads nesta etapa</small>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="consultant-reference-card consultant-reference-card-spark">
+                      <div className="consultant-reference-card-header">
+                        <div>
+                          <strong>Ritmo de entrada</strong>
+                          <span>Últimos 7 dias</span>
+                        </div>
+                        <strong className="consultant-reference-card-highlight">
+                          {dailyLeadSeries.reduce((total, item) => total + item.count, 0).toString().padStart(2, "0")}
                         </strong>
-                        <small>Leads registrados na data mais recente</small>
-                      </article>
-                      <article className="consultant-mini-dashboard-card">
-                        <span>Pipeline ativo</span>
-                        <strong>{openPipelineCount.toString().padStart(2, "0")}</strong>
-                        <small>{qualifiedCount.toString().padStart(2, "0")} com avanço comercial</small>
-                      </article>
-                    </div>
-                  </section>
+                      </div>
+                      <div className="consultant-reference-sparkline">
+                        <svg viewBox="0 0 420 220" aria-hidden="true">
+                          {dailyLeadSeries.map((item, index) => (
+                            <path
+                              key={`${item.label}-grid`}
+                              className="consultant-reference-sparkline-grid"
+                              d={`M ${30 + index * 60} 18 V 188`}
+                            />
+                          ))}
+                          <path className="consultant-reference-sparkline-path" d={sparklinePath} />
+                        </svg>
+                      </div>
+                    </article>
 
-                  <section className="consultant-panel consultant-dashboard-side">
-                    <div className="consultant-panel-header">
-                      <h2>Notificações e agenda</h2>
-                      <span>Hoje</span>
-                    </div>
-                    <div className="consultant-dashboard-side-grid">
-                      {activeLead ? (
-                        <button
-                          className="consultant-focus-card"
-                          type="button"
-                          onClick={() => setSelectedLead(activeLead)}
-                        >
-                          <div className="consultant-focus-card-header">
-                            <span className="consultant-kicker-chip">Lead em foco</span>
-                            <span className={`consultant-priority-chip ${getLeadPriorityClassName(activeLead)}`}>
-                              {getLeadPriority(activeLead)}
-                            </span>
+                    <article className="consultant-reference-card consultant-reference-card-bars">
+                      <div className="consultant-reference-card-header">
+                        <div>
+                          <strong>Comparativo diário</strong>
+                          <span>Entradas x avanço</span>
+                        </div>
+                        <strong className="consultant-reference-card-highlight">
+                          {openPipelineCount.toString().padStart(2, "0")}
+                        </strong>
+                      </div>
+                      <div className="consultant-reference-bar-chart">
+                        {dailyLeadSeries.map((item) => (
+                          <div className="consultant-reference-bar-group" key={item.label}>
+                            <span
+                              className="consultant-reference-bar consultant-reference-bar-blue"
+                              style={{ height: `${Math.max(item.count, 0.4) * 38}px` }}
+                            />
+                            <span
+                              className="consultant-reference-bar consultant-reference-bar-orange"
+                              style={{ height: `${Math.max(item.count + 0.2, 0.35) * 30}px` }}
+                            />
+                            <small>{item.label}</small>
                           </div>
-                          <strong>{activeLead.company}</strong>
-                          <p>{activeLead.contact}</p>
-                          <small>{activeLead.diagnosis}</small>
-                        </button>
-                      ) : (
-                        <div className="consultant-empty-card">
-                          <strong>Nenhum lead em foco</strong>
-                          <span>Assim que entrar um lead, ele aparece aqui para ação rápida.</span>
-                        </div>
-                      )}
-
-                      <div className="consultant-mini-metrics">
-                        <div>
-                          <span>Qualificados</span>
-                          <strong>{qualifiedCount.toString().padStart(2, "0")}</strong>
-                        </div>
-                        <div>
-                          <span>Perdidos</span>
-                          <strong>{lostCount.toString().padStart(2, "0")}</strong>
-                        </div>
+                        ))}
                       </div>
+                    </article>
 
-                      <div className="consultant-agenda-list consultant-agenda-list-compact">
-                        {consultantAgendaLoading ? (
-                          <p className="result-cta-hint">Carregando agenda da instância...</p>
-                        ) : agendaPreview.length === 0 ? (
-                          <p className="result-cta-hint">Nenhuma reunião agendada.</p>
-                        ) : (
-                          agendaPreview.map((item) => (
-                            <article className="consultant-agenda-card" key={item.id}>
-                              <div className="consultant-agenda-main">
-                                <strong>{item.title}</strong>
-                                <span>{item.company}</span>
-                              </div>
-                              <div className="consultant-agenda-meta">
-                                <small>{item.startsAt}</small>
-                                <span className={`status-pill status-${toStatusClassName(item.status)}`}>{item.status}</span>
-                              </div>
-                            </article>
-                          ))
-                        )}
+                    <article className="consultant-reference-card consultant-reference-card-list">
+                      <div className="consultant-reference-card-header">
+                        <strong>Agenda e acompanhamento</strong>
+                        <span>Próximos passos</span>
                       </div>
-
-                      <div className="consultant-tip-card">
-                        <strong>Melhor ação agora</strong>
-                        <p>
-                          {activeLead
-                            ? `Responder ${activeLead.contact} com foco em ${activeLead.objective.toLowerCase()}.`
-                            : "Assim que entrar um lead, a próxima melhor ação aparece aqui."}
-                        </p>
+                      <div className="consultant-reference-list-head">
+                        <span>Lead / compromisso</span>
+                        <span>Quando</span>
                       </div>
-                    </div>
-                  </section>
+                      <div className="consultant-reference-list">
+                        {(agendaPreview.length > 0 ? agendaPreview : consultantLeads.slice(0, 3).map((lead) => ({
+                          id: lead.id,
+                          title: lead.company,
+                          company: lead.contact,
+                          startsAt: lead.updatedAt,
+                          owner: lead.recommendedCategory,
+                          status: lead.status === "Perdido" ? "Pendente" : "Confirmada",
+                        }))).map((item) => (
+                          <article className="consultant-reference-list-item" key={item.id}>
+                            <div>
+                              <strong>{item.title}</strong>
+                              <span>{item.company}</span>
+                            </div>
+                            <small>{item.startsAt}</small>
+                          </article>
+                        ))}
+                      </div>
+                    </article>
+                  </div>
                 </div>
-              </>
+              </section>
             )}
 
             {consultantSection === "leads" && (
