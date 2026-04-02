@@ -71,12 +71,38 @@ export type FunnelEventInsert = {
   metadata?: Record<string, unknown>;
 };
 
+export type PartnerActivityStatus = "Pendente" | "Concluída";
+
+export type PartnerActivityInsert = {
+  partner_instance_slug: string;
+  lead_id?: string | null;
+  title: string;
+  due_date?: string | null;
+  channel?: string | null;
+  note?: string | null;
+  status?: PartnerActivityStatus;
+};
+
+export type PartnerActivityRow = {
+  id: string;
+  partner_instance_slug: string;
+  lead_id: string | null;
+  title: string;
+  due_date: string | null;
+  channel: string | null;
+  note: string | null;
+  status: PartnerActivityStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PartnerProfileRow = {
   id: string;
   user_id: string;
   instance_slug: string;
   partner_name: string;
   role: string;
+  pipeline_name: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import {
@@ -40,7 +40,10 @@ import {
 import { listAgendaByInstance } from "./lib/repositories/agendaRepository";
 import { trackEvent } from "./lib/repositories/eventsRepository";
 import { createLead, listLeadsByInstance } from "./lib/repositories/leadsRepository";
-import { getCurrentPartnerProfile } from "./lib/repositories/partnerProfileRepository";
+import {
+  getCurrentPartnerProfile,
+  updateCurrentPartnerPipelineName,
+} from "./lib/repositories/partnerProfileRepository";
 import { supabase } from "./lib/supabase";
 import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
 import { ExploreScreen } from "./features/explore/ExploreScreen";
@@ -59,6 +62,24 @@ import type {
   SignalItem,
 } from "./types/domain";
 import type { LeadRow, PartnerAgendaRow, PartnerProfileRow } from "./types/database";
+
+type ConsultantDealDraft = {
+  contactName: string;
+  organization: string;
+  title: string;
+  value: string;
+  funnel: string;
+  stage: string;
+  tag: string;
+  expectedCloseDate: string;
+  owner: string;
+  sourceChannel: string;
+  sourceChannelId: string;
+  visibility: string;
+  phone: string;
+  email: string;
+  role: string;
+};
 
 function AnimatedSignalList({ items }: { items: SignalItem[] }) {
   const loopItems = [...items, ...items];
@@ -161,6 +182,10 @@ function AnimatedNumber({
 }
 
 function App() {
+  const [themeMode, setThemeMode] = useState<"light" | "dark">(() => {
+    const storedTheme = window.localStorage.getItem("rsn-theme-mode");
+    return storedTheme === "light" ? "light" : "dark";
+  });
   const [currentStep, setCurrentStep] = useState(0);
   const [screen, setScreen] = useState<Screen>("landing");
   const [formData, setFormData] = useState<FormData>(initialData);
@@ -222,6 +247,26 @@ function App() {
     status: item.status === "Cancelada" ? "Pendente" : item.status,
   });
 
+  const refreshConsultantLeads = useCallback(async (instanceSlug: string) => {
+    const leadsResult = await listLeadsByInstance(instanceSlug);
+
+    if (!leadsResult.success) {
+      return {
+        success: false as const,
+        error: leadsResult.error,
+      };
+    }
+
+    setConsultantLeads(
+      leadsResult.data.length > 0 ? leadsResult.data.map(mapLeadRowToConsultantLead) : consultantLeadsMock,
+    );
+
+    return {
+      success: true as const,
+      error: null,
+    };
+  }, []);
+
   const normalizedChallenge = formData.challenge.toLowerCase();
 
   const inferredArea = useMemo(
@@ -268,6 +313,10 @@ function App() {
 
   const openConsultantArea = () => {
     setScreen("consultor");
+  };
+
+  const toggleThemeMode = () => {
+    setThemeMode((previous) => (previous === "light" ? "dark" : "light"));
   };
 
   const openExplore = () => {
@@ -398,6 +447,10 @@ function App() {
 
     return () => window.clearTimeout(timer);
   }, [screen, preferredExploreCategory, formData.challenge]);
+
+  useEffect(() => {
+    window.localStorage.setItem("rsn-theme-mode", themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     if (!isContactModalOpen) {
@@ -678,6 +731,115 @@ function App() {
     setScreen("explore");
   };
 
+  const handleConsultantDealCreate = async (draft: ConsultantDealDraft) => {
+    const instanceSlug = partnerProfile?.instance_slug;
+
+    if (!consultantSession || !instanceSlug) {
+      return {
+        success: false,
+        error: "Não foi possível identificar a instância ativa do parceiro.",
+      };
+    }
+
+    const createResult = await createLead({
+      partner_instance_slug: instanceSlug,
+      company: draft.organization || null,
+      contact_name: draft.contactName,
+      contact_email: draft.email || "lead@resolva.local",
+      contact_phone: draft.phone || null,
+      contact_role: draft.role || null,
+      challenge: draft.title || null,
+      main_pain: draft.tag || null,
+      diagnosis_title: draft.title || "Novo negócio",
+      diagnosis_summary: `Lead criado manualmente no pipeline ${draft.funnel}.`,
+      recommended_category: draft.funnel || null,
+      primary_goal_label: draft.title || null,
+      source_screen: draft.sourceChannel || "consultor_manual",
+      status:
+        draft.stage === "Contato iniciado"
+          ? "Em contato"
+          : draft.stage === "Em negociação"
+            ? "Qualificado"
+            : draft.stage === "Fechado"
+              ? "Reunião marcada"
+              : draft.stage === "Perdido"
+                ? "Perdido"
+                : "Novo",
+    });
+
+    if (!createResult.success) {
+      return {
+        success: false,
+        error: createResult.error,
+      };
+    }
+
+    const refreshResult = await refreshConsultantLeads(instanceSlug);
+
+    if (!refreshResult.success) {
+      const optimisticLead: ConsultantLead = {
+        id: `manual-${Date.now()}`,
+        company: draft.organization || "Empresa não informada",
+        contact: draft.contactName,
+        email: draft.email || "lead@resolva.local",
+        phone: draft.phone || "Telefone não informado",
+        role: draft.role || "Cargo não informado",
+        status:
+          draft.stage === "Contato iniciado"
+            ? "Em contato"
+            : draft.stage === "Em negociação"
+              ? "Qualificado"
+              : draft.stage === "Fechado"
+                ? "Reunião marcada"
+                : draft.stage === "Perdido"
+                  ? "Perdido"
+                  : "Novo",
+        challenge: draft.title || "Novo negócio criado manualmente",
+        diagnosis: draft.title || "Novo negócio",
+        diagnosisSummary: `Lead criado manualmente via ${draft.sourceChannel || "consultor"}.`,
+        objective: draft.title || "Objetivo não informado",
+        urgency: draft.tag || "Lead do diagnóstico",
+        recommendedCategory: draft.funnel || "Pipeline comercial",
+        recommendedSpecialist: partnerProfile?.partner_name || "Parceiro ativo",
+        createdAtIso: new Date().toISOString(),
+        updatedAtIso: new Date().toISOString(),
+        updatedAt: formatLeadTimestamp(new Date().toISOString()),
+      };
+
+      setConsultantLeads((current) => [optimisticLead, ...current]);
+    }
+
+    return {
+      success: true,
+      error: null,
+    };
+  };
+
+  const handleConsultantPipelineSave = async (pipelineName: string) => {
+    if (!consultantSession) {
+      return {
+        success: false,
+        error: "Não foi possível identificar a sessão do parceiro.",
+      };
+    }
+
+    const result = await updateCurrentPartnerPipelineName(pipelineName);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    setPartnerProfile(result.data);
+
+    return {
+      success: true,
+      error: null,
+    };
+  };
+
   const handleContactModalOpen = () => {
     openContactModal({
       name: specialist.name,
@@ -719,8 +881,20 @@ function App() {
   }, [consultantLeads]);
 
   return (
-    <div className={screen === "consultor" ? "page-shell consultant-page-shell" : "page-shell"}>
-      <header className={screen === "consultor" ? "topbar topbar-consultant" : "topbar"}>
+    <div
+      className={
+        screen === "consultor"
+          ? `page-shell consultant-page-shell theme-${themeMode}`
+          : `page-shell theme-${themeMode}`
+      }
+    >
+      <header
+        className={
+          screen === "consultor"
+            ? `topbar topbar-consultant theme-${themeMode}`
+            : `topbar theme-${themeMode}`
+        }
+      >
         <button className="brand brand-light brand-button" type="button" onClick={goHome} aria-label="Voltar para o início">
           <img className="brand-logo brand-logo-symbol" src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
           <img className="brand-logo brand-logo-horizontal" src="/logo-sem-fundo.png" alt="Resolva Seu Negócio" />
@@ -746,6 +920,9 @@ function App() {
               <a href="#como-funciona">Como funciona</a>
             </>
           )}
+          <button className="theme-toggle" type="button" onClick={toggleThemeMode} aria-label="Alternar tema">
+            {themeMode === "light" ? "◐" : "◑"}
+          </button>
           <button className="nav-cta" onClick={() => startDiagnosis()}>
             Fazer diagnóstico
           </button>
@@ -855,18 +1032,23 @@ function App() {
       {screen === "consultor" && (
         <ConsultorScreen
           consultantAuthenticated={Boolean(consultantSession)}
+          themeMode={themeMode}
           consultantSection={consultantSection}
           consultantForm={consultantForm}
           consultantAuthError={consultantAuthError}
           consultantInstanceSlug={partnerProfile?.instance_slug ?? null}
+          consultantPipelineName={partnerProfile?.pipeline_name ?? "Pipeline comercial"}
           consultantLeadsLoading={consultantLeadsLoading}
           consultantAgendaLoading={consultantAgendaLoading}
           consultantStats={consultantStats}
           consultantLeads={consultantLeads}
           consultantAgenda={consultantAgenda}
           toStatusClassName={toStatusClassName}
+          onCreateConsultantDeal={handleConsultantDealCreate}
+          onSaveConsultantPipeline={handleConsultantPipelineSave}
           onConsultantLogin={handleConsultantLogin}
           onConsultantLogout={handleConsultantLogout}
+          onToggleTheme={toggleThemeMode}
           onConsultantSectionChange={setConsultantSection}
           onConsultantEmailChange={(event) => {
             setConsultantAuthError(null);

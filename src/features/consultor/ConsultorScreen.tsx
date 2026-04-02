@@ -41,6 +41,7 @@ type ConsultorScreenProps = {
   consultantForm: ConsultantForm;
   consultantAuthError: string | null;
   consultantInstanceSlug: string | null;
+  consultantPipelineName: string;
   consultantLeadsLoading: boolean;
   consultantAgendaLoading: boolean;
   consultantStats: ConsultantStat[];
@@ -48,6 +49,10 @@ type ConsultorScreenProps = {
   consultantAgenda: ConsultantAgendaItem[];
   toStatusClassName: (value: string) => string;
   onCreateConsultantDeal: (draft: ConsultantDealDraft) => Promise<{
+    success: boolean;
+    error?: string | null;
+  }>;
+  onSaveConsultantPipeline: (pipelineName: string) => Promise<{
     success: boolean;
     error?: string | null;
   }>;
@@ -67,6 +72,7 @@ export function ConsultorScreen({
   consultantForm,
   consultantAuthError,
   consultantInstanceSlug,
+  consultantPipelineName,
   consultantLeadsLoading,
   consultantAgendaLoading,
   consultantStats,
@@ -74,6 +80,7 @@ export function ConsultorScreen({
   consultantAgenda,
   toStatusClassName,
   onCreateConsultantDeal,
+  onSaveConsultantPipeline,
   onConsultantLogin,
   onConsultantLogout,
   onToggleTheme,
@@ -92,9 +99,10 @@ export function ConsultorScreen({
   const [toolSuccess, setToolSuccess] = useState<string | null>(null);
   const [isSavingDeal, setIsSavingDeal] = useState(false);
   const [isSavingActivity, setIsSavingActivity] = useState(false);
+  const [isSavingPipeline, setIsSavingPipeline] = useState(false);
   const [leadActivities, setLeadActivities] = useState<PartnerActivityRow[]>([]);
   const [leadActivitiesLoading, setLeadActivitiesLoading] = useState(false);
-  const [pipelineNameDraft, setPipelineNameDraft] = useState("Pipeline comercial");
+  const [pipelineNameDraft, setPipelineNameDraft] = useState(consultantPipelineName);
   const [activityForm, setActivityForm] = useState({
     title: "",
     dueDate: "",
@@ -205,6 +213,14 @@ export function ConsultorScreen({
     setToolError(null);
     setToolSuccess(null);
   }, [activeToolModal]);
+
+  useEffect(() => {
+    setPipelineNameDraft(consultantPipelineName);
+    setDealForm((current) => ({
+      ...current,
+      funnel: consultantPipelineName,
+    }));
+  }, [consultantPipelineName]);
 
   useEffect(() => {
     if (!selectedLead || !consultantInstanceSlug) {
@@ -351,6 +367,30 @@ export function ConsultorScreen({
     }
 
     setToolSuccess("Negócio criado e enviado para o pipeline.");
+    window.setTimeout(() => {
+      closeToolModal();
+    }, 300);
+  };
+
+  const handlePipelineSave = async () => {
+    if (!pipelineNameDraft.trim()) {
+      setToolError("Informe um nome para o pipeline.");
+      return;
+    }
+
+    setIsSavingPipeline(true);
+    setToolError(null);
+
+    const result = await onSaveConsultantPipeline(pipelineNameDraft);
+
+    setIsSavingPipeline(false);
+
+    if (!result.success) {
+      setToolError(result.error ?? "Não foi possível salvar o pipeline agora.");
+      return;
+    }
+
+    setToolSuccess("Pipeline atualizado com sucesso.");
     window.setTimeout(() => {
       closeToolModal();
     }, 300);
@@ -1421,8 +1461,8 @@ export function ConsultorScreen({
                   <button className="consultant-card-action" type="button" onClick={closeToolModal}>
                     Fechar
                   </button>
-                  <button className="primary-button" type="button" onClick={closeToolModal}>
-                    Salvar pipeline
+                  <button className="primary-button" type="button" onClick={handlePipelineSave} disabled={isSavingPipeline}>
+                    {isSavingPipeline ? "Salvando..." : "Salvar pipeline"}
                   </button>
                 </div>
               </div>
@@ -1595,7 +1635,7 @@ export function ConsultorScreen({
                         value={dealForm.funnel}
                         onChange={(event) => setDealForm((current) => ({ ...current, funnel: event.target.value }))}
                       >
-                        <option>Pipeline comercial</option>
+                        <option>{consultantPipelineName}</option>
                       </select>
                     </label>
                     <label className="consultant-tool-field">

@@ -58,3 +58,45 @@ export async function getCurrentPartnerProfile(): RepositoryResult<PartnerProfil
     error: null,
   };
 }
+
+export async function updateCurrentPartnerPipelineName(
+  pipelineName: string,
+): RepositoryResult<PartnerProfileRow> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return buildError(userError.message);
+  }
+
+  if (!user) {
+    return buildError("Usuário não autenticado.");
+  }
+
+  const normalizedPipelineName = pipelineName.trim();
+
+  if (!normalizedPipelineName) {
+    return buildError("pipelineName is required");
+  }
+
+  const { data, error } = await supabase
+    .from("partner_profiles")
+    .update({
+      pipeline_name: normalizedPipelineName,
+    })
+    .eq("user_id", user.id)
+    .select("*")
+    .single<PartnerProfileRow>();
+
+  if (error) {
+    return buildError(error.message);
+  }
+
+  return {
+    success: true,
+    data,
+    error: null,
+  };
+}
