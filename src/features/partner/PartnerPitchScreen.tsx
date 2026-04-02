@@ -360,10 +360,9 @@ export function PartnerPitchScreen({
             <div className="contact-modal-header partner-application-modal-header">
               <div className="partner-application-copy">
                 <p className="section-kicker">Aplicação do parceiro</p>
-                <h2 id="partner-application-title">Escolheu o plano? Deixe seu perfil para validação.</h2>
+                <h2 id="partner-application-title">Enviar aplicação</h2>
                 <p>
-                  Seu perfil vai para o time da Resolva, que valida aderência, organiza a entrada e segue com a
-                  formalização da parceria e cobrança recorrente.
+                  Preencha os dados do parceiro para o time da Resolva validar aderência e seguir com a formalização.
                 </p>
               </div>
               <button
@@ -377,17 +376,17 @@ export function PartnerPitchScreen({
             </div>
 
             <div className="partner-application-modal-layout">
-              <div className="partner-pitch-summary">
-                <span>Plano selecionado</span>
-                <strong>{selectedPlan.name}</strong>
-                <small>
-                  {selectedPlanSlug === "enterprise"
-                    ? "Projeto customizado"
-                    : `${selectedPlanPriceLabel} • ${billingCycle}`}
-                </small>
-              </div>
-
               <form className="partner-pitch-form" onSubmit={handleSubmit}>
+                <div className="partner-pitch-summary partner-pitch-summary-compact">
+                  <span>Plano</span>
+                  <strong>{selectedPlan.name}</strong>
+                  <small>
+                    {selectedPlanSlug === "enterprise"
+                      ? "Projeto customizado"
+                      : `${selectedPlanPriceLabel} • ${billingCycle}`}
+                  </small>
+                </div>
+
                 <label>
                   Nome
                   <input

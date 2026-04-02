@@ -2379,13 +2379,13 @@ button {
 
 .partner-application-copy {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   align-content: start;
 }
 
 .partner-application-copy h2 {
-  font-size: clamp(2.1rem, 3.8vw, 3.4rem);
-  line-height: 0.98;
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
+  line-height: 1;
 }
 
 .partner-pitch-summary {
@@ -2401,9 +2401,21 @@ button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 247, 237, 0.96) 100%);
 }
 
+.partner-pitch-summary-compact {
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.partner-pitch-summary-compact small {
+  justify-self: end;
+}
+
 .partner-pitch-form {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .partner-pitch-form label {
@@ -2453,8 +2465,8 @@ button {
 }
 
 .partner-application-modal {
-  width: min(980px, calc(100vw - 40px));
-  max-width: 980px;
+  width: min(760px, calc(100vw - 40px));
+  max-width: 760px;
 }
 
 .partner-application-modal-light {
@@ -2476,14 +2488,12 @@ button {
 }
 
 .partner-application-modal-header h2 {
-  font-size: clamp(2.1rem, 4vw, 3.3rem);
-  line-height: 0.96;
+  font-size: clamp(1.9rem, 3vw, 2.7rem);
+  line-height: 1;
 }
 
 .partner-application-modal-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1fr);
-  gap: 24px;
+  display: block;
 }
 
 .partner-application-modal-actions {
@@ -2502,10 +2512,6 @@ button {
 
   .partner-pricing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .partner-application-modal-layout {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -2528,6 +2534,15 @@ button {
 
   .partner-application-modal-layout {
     padding: 0;
+  }
+
+  .partner-pitch-summary-compact {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .partner-pitch-summary-compact small {
+    justify-self: start;
   }
 
   .partner-pricing-hero {
