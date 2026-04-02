@@ -450,28 +450,31 @@ export function ConsultorScreen({
                   Pipeline comercial
                 </button>
                 <button
-                  className="consultant-tool-icon"
+                  className="consultant-tool-action"
                   type="button"
                   aria-label="Filtro rápido"
                   onClick={() => setActiveToolModal("filters")}
                 >
-                  ⌯
+                  <span aria-hidden="true">⌯</span>
+                  Filtros
                 </button>
                 <button
-                  className="consultant-tool-icon"
+                  className="consultant-tool-action"
                   type="button"
                   aria-label="Ações rápidas"
                   onClick={() => setActiveToolModal("quick-create")}
                 >
-                  ◉
+                  <span aria-hidden="true">◉</span>
+                  Ações
                 </button>
                 <button
-                  className="consultant-tool-icon"
+                  className="consultant-tool-action consultant-tool-action-primary"
                   type="button"
                   aria-label="Adicionar"
                   onClick={() => setActiveToolModal("quick-create")}
                 >
-                  ＋
+                  <span aria-hidden="true">＋</span>
+                  Novo
                 </button>
               </div>
             </div>
@@ -996,7 +999,9 @@ export function ConsultorScreen({
       {selectedLead && (
         <div className="modal-overlay" role="presentation" onClick={() => setSelectedLead(null)}>
           <section
-            className="contact-modal consultant-lead-modal"
+            className={`contact-modal consultant-lead-modal ${
+              themeMode === "dark" ? "consultant-theme-dark" : "consultant-theme-light"
+            }`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="consultant-lead-modal-title"
@@ -1020,6 +1025,27 @@ export function ConsultorScreen({
               </button>
             </div>
 
+            <div className="consultant-lead-modal-topbar">
+              <div className="consultant-lead-modal-chips">
+                <span className={`status-pill status-${toStatusClassName(selectedLead.status)}`}>{selectedLead.status}</span>
+                <span className={`consultant-priority-chip ${getLeadPriorityClassName(selectedLead)}`}>
+                  {getLeadPriority(selectedLead)}
+                </span>
+                <span className="consultant-context-chip">{selectedLead.recommendedCategory}</span>
+              </div>
+              <div className="consultant-lead-modal-actions">
+                <button className="consultant-card-action" type="button" onClick={() => openLeadWhatsApp(selectedLead)}>
+                  WhatsApp
+                </button>
+                <button className="consultant-card-action" type="button" onClick={() => openActivityModal(selectedLead)}>
+                  Criar atividade
+                </button>
+                <button className="primary-button" type="button" onClick={() => setSelectedLead(null)}>
+                  Fechar lead
+                </button>
+              </div>
+            </div>
+
             <div className="consultant-lead-modal-grid">
               <div className="consultant-lead-modal-section">
                 <p className="consultant-lead-label">Contato</p>
@@ -1036,6 +1062,12 @@ export function ConsultorScreen({
                   </span>
                 </div>
                 <span>Atualizado em {selectedLead.updatedAt}</span>
+              </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Empresa e objetivo</p>
+                <strong>{selectedLead.company}</strong>
+                <span>{selectedLead.objective}</span>
+                <span>{selectedLead.recommendedCategory}</span>
               </div>
               <div className="consultant-lead-modal-section">
                 <p className="consultant-lead-label">Desafio inicial</p>
@@ -1056,6 +1088,18 @@ export function ConsultorScreen({
                 <span>Direção sugerida: {selectedLead.recommendedCategory}</span>
                 <span>Especialista recomendado: {selectedLead.recommendedSpecialist}</span>
               </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Abordagem sugerida</p>
+                <strong>Entrar pelo resultado que esse lead quer destravar.</strong>
+                <span>Falar com foco em {selectedLead.objective.toLowerCase()} e conectar isso ao diagnóstico atual.</span>
+                <span>Evitar discurso genérico; conduzir para próximo passo comercial com data definida.</span>
+              </div>
+              <div className="consultant-lead-modal-section">
+                <p className="consultant-lead-label">Próxima ação recomendada</p>
+                <strong>{`Follow-up com ${selectedLead.contact}`}</strong>
+                <span>Canal principal: WhatsApp</span>
+                <span>Registrar atividade e mover de etapa após contato.</span>
+              </div>
             </div>
           </section>
         </div>
@@ -1064,7 +1108,9 @@ export function ConsultorScreen({
       {activeToolModal && (
         <div className="modal-overlay" role="presentation" onClick={closeToolModal}>
           <section
-            className="contact-modal consultant-tool-modal"
+            className={`contact-modal consultant-tool-modal ${
+              themeMode === "dark" ? "consultant-theme-dark" : "consultant-theme-light"
+            }`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="consultant-tool-modal-title"
@@ -1099,6 +1145,10 @@ export function ConsultorScreen({
 
             {activeToolModal === "pipeline" && (
               <div className="consultant-tool-modal-grid">
+                <div className="consultant-tool-summary-card consultant-tool-summary-card-hero">
+                  <strong>Estrutura do funil</strong>
+                  <span>Defina o nome do pipeline e revise como as etapas aparecem no board do parceiro.</span>
+                </div>
                 <label className="consultant-tool-field">
                   Nome do pipeline
                   <input
@@ -1117,6 +1167,16 @@ export function ConsultorScreen({
                     ))}
                   </div>
                 </div>
+                <div className="consultant-tool-inline-fields">
+                  <div className="consultant-tool-summary-card">
+                    <strong>Leads ativos</strong>
+                    <span>{openPipelineCount.toString().padStart(2, "0")} no pipeline atual</span>
+                  </div>
+                  <div className="consultant-tool-summary-card">
+                    <strong>Conversão</strong>
+                    <span>{conversionRate}% da base com avanço real</span>
+                  </div>
+                </div>
                 <div className="consultant-tool-modal-actions">
                   <button className="consultant-card-action" type="button" onClick={closeToolModal}>
                     Fechar
@@ -1133,6 +1193,16 @@ export function ConsultorScreen({
                 <div className="consultant-tool-summary-card">
                   <strong>Lead da atividade</strong>
                   <span>{activityLead ? `${activityLead.company} · ${activityLead.contact}` : "Lead em foco do board"}</span>
+                </div>
+                <div className="consultant-tool-inline-fields">
+                  <div className="consultant-tool-summary-card">
+                    <strong>Objetivo</strong>
+                    <span>{activityLead?.objective ?? "Objetivo do lead em foco"}</span>
+                  </div>
+                  <div className="consultant-tool-summary-card">
+                    <strong>Prioridade</strong>
+                    <span>{activityLead ? getLeadPriority(activityLead) : "Nova oportunidade"}</span>
+                  </div>
                 </div>
                 <label className="consultant-tool-field">
                   Título
@@ -1173,6 +1243,14 @@ export function ConsultorScreen({
                     placeholder="Contexto do próximo passo"
                   />
                 </label>
+                <div className="consultant-tool-summary-card">
+                  <strong>Sugestão prática</strong>
+                  <span>
+                    {activityLead
+                      ? `Entrar em contato citando ${activityLead.diagnosis.toLowerCase()} e puxar o próximo passo comercial.`
+                      : "Criar uma atividade ligada ao lead em foco com data, canal e contexto."}
+                  </span>
+                </div>
                 <div className="consultant-tool-modal-actions">
                   <button className="consultant-card-action" type="button" onClick={closeToolModal}>
                     Cancelar
@@ -1195,9 +1273,15 @@ export function ConsultorScreen({
                     <span className="consultant-context-chip">Sem retorno</span>
                   </div>
                 </div>
-                <div className="consultant-tool-summary-card">
-                  <strong>Visualização ativa</strong>
-                  <span>Pipeline comercial · {visibleLeadCount} itens visíveis</span>
+                <div className="consultant-tool-inline-fields">
+                  <div className="consultant-tool-summary-card">
+                    <strong>Visualização ativa</strong>
+                    <span>Pipeline comercial · {visibleLeadCount} itens visíveis</span>
+                  </div>
+                  <div className="consultant-tool-summary-card">
+                    <strong>Resumo do board</strong>
+                    <span>{openPipelineCount.toString().padStart(2, "0")} ativos · {conversionRate}% conversão</span>
+                  </div>
                 </div>
                 <div className="consultant-tool-modal-actions">
                   <button className="consultant-card-action" type="button" onClick={closeToolModal}>
@@ -1211,11 +1295,15 @@ export function ConsultorScreen({
               <div className="consultant-tool-quick-grid">
                 <button className="consultant-tool-quick-card" type="button" onClick={() => setActiveToolModal("activity")}>
                   <strong>Nova atividade</strong>
-                  <span>Criar follow-up, ligação, email ou reunião.</span>
+                  <span>Criar follow-up, ligação, email ou reunião para um lead do pipeline.</span>
                 </button>
                 <button className="consultant-tool-quick-card" type="button" onClick={() => setActiveToolModal("pipeline")}>
                   <strong>Novo funil</strong>
                   <span>Preparar um pipeline novo para outra operação.</span>
+                </button>
+                <button className="consultant-tool-quick-card" type="button" onClick={() => setActiveToolModal("filters")}>
+                  <strong>Filtrar board</strong>
+                  <span>Refinar a leitura do pipeline por contexto comercial.</span>
                 </button>
                 <button className="consultant-tool-quick-card" type="button" onClick={() => setSelectedLead(activeLead)}>
                   <strong>Abrir lead em foco</strong>
