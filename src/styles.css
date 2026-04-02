@@ -2265,12 +2265,13 @@ button {
 .partner-pricing-card {
   text-align: left;
   display: grid;
-  align-content: start;
+  grid-template-rows: auto auto auto auto auto 1fr;
   gap: 12px;
   min-height: 100%;
   padding: 24px 22px 24px;
   border: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
 }
 
 .partner-pitch-shell-dark .partner-pricing-card {
@@ -2328,6 +2329,8 @@ button {
   border-radius: 14px;
   margin-top: 4px;
   font-weight: 800;
+  border: 0;
+  width: 100%;
 }
 
 .partner-pitch-shell-dark .partner-pricing-card-cta {
@@ -2346,6 +2349,7 @@ button {
   list-style: none;
   display: grid;
   gap: 0;
+  align-content: start;
 }
 
 .partner-pricing-card li {
@@ -2371,13 +2375,6 @@ button {
 
 .partner-pitch-shell-light .partner-pricing-card li::before {
   color: #111827;
-}
-
-.partner-application-surface {
-  display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1fr);
-  gap: 28px;
-  padding: 34px;
 }
 
 .partner-application-copy {
@@ -2455,9 +2452,48 @@ button {
   color: #16a34a;
 }
 
+.partner-application-modal {
+  width: min(980px, calc(100vw - 40px));
+  max-width: 980px;
+}
+
+.partner-application-modal-light {
+  background:
+    radial-gradient(circle at 18% 16%, rgba(249, 115, 22, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(255, 252, 248, 0.98) 0%, rgba(255, 255, 255, 1) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.12);
+}
+
+.partner-application-modal-dark {
+  background:
+    radial-gradient(circle at 18% 16%, rgba(249, 115, 22, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(11, 14, 24, 0.98) 0%, rgba(6, 8, 14, 1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.partner-application-modal-header {
+  align-items: start;
+}
+
+.partner-application-modal-header h2 {
+  font-size: clamp(2.1rem, 4vw, 3.3rem);
+  line-height: 0.96;
+}
+
+.partner-application-modal-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.partner-application-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 @media (max-width: 1100px) {
   .partner-pricing-header,
-  .partner-application-surface,
   .partner-pricing-intro {
     grid-template-columns: 1fr;
     flex-direction: column;
@@ -2466,6 +2502,10 @@ button {
 
   .partner-pricing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .partner-application-modal-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2476,14 +2516,18 @@ button {
 
   .partner-pricing-intro,
   .partner-pricing-surface,
-  .partner-application-surface {
+  .partner-application-modal {
     border-radius: 26px;
   }
 
   .partner-pricing-intro,
   .partner-pricing-header,
-  .partner-application-surface {
+  .partner-application-modal-layout {
     padding: 24px;
+  }
+
+  .partner-application-modal-layout {
+    padding: 0;
   }
 
   .partner-pricing-hero {

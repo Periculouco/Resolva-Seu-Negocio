@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { ChangeEventHandler, FormEvent } from "react";
+import type { ChangeEventHandler, FormEvent, MouseEventHandler } from "react";
 
 type BillingCycle = "Mensal" | "Anual";
 
@@ -111,6 +111,7 @@ export function PartnerPitchScreen({
 }: PartnerPitchScreenProps) {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("Mensal");
   const [selectedPlanSlug, setSelectedPlanSlug] = useState("plus");
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -134,6 +135,10 @@ export function PartnerPitchScreen({
       : billingCycle === "Mensal"
         ? selectedFixedPlan.monthlyPrice
         : selectedFixedPlan.annualPrice;
+
+  const stopPropagation: MouseEventHandler<HTMLElement> = (event) => {
+    event.stopPropagation();
+  };
 
   const handleFieldChange =
     (field: keyof typeof formData): ChangeEventHandler<HTMLInputElement> =>
@@ -177,6 +182,7 @@ export function PartnerPitchScreen({
       partnerSpecialty: "",
       partnerPortfolioUrl: "",
     });
+    setIsApplicationModalOpen(false);
   };
 
   return (
@@ -254,11 +260,18 @@ export function PartnerPitchScreen({
               const price = billingCycle === "Mensal" ? plan.monthlyPrice : plan.annualPrice;
 
               return (
-                <button
+                <article
                   className={isSelected ? "partner-pricing-card active" : "partner-pricing-card"}
                   key={plan.slug}
-                  type="button"
                   onClick={() => setSelectedPlanSlug(plan.slug)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedPlanSlug(plan.slug);
+                    }
+                  }}
                 >
                   <div className="partner-pricing-card-top">
                     <strong>{plan.name}</strong>
@@ -269,20 +282,39 @@ export function PartnerPitchScreen({
                   </div>
                   <p className="partner-pricing-card-footnote">{plan.annualFootnote}</p>
                   <p className="partner-pricing-card-savings">{plan.savings}</p>
-                  <div className="partner-pricing-card-cta">{plan.cta}</div>
+                  <button
+                    className="partner-pricing-card-cta"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedPlanSlug(plan.slug);
+                      setSubmitError(null);
+                      setSubmitSuccess(null);
+                      setIsApplicationModalOpen(true);
+                    }}
+                  >
+                    {plan.cta}
+                  </button>
                   <ul>
                     {plan.bullets.map((bullet) => (
                       <li key={bullet}>{bullet}</li>
                     ))}
                   </ul>
-                </button>
+                </article>
               );
             })}
 
-            <button
+            <article
               className={selectedPlanSlug === "enterprise" ? "partner-pricing-card active" : "partner-pricing-card"}
-              type="button"
               onClick={() => setSelectedPlanSlug("enterprise")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedPlanSlug("enterprise");
+                }
+              }}
             >
               <div className="partner-pricing-card-top">
                 <strong>{enterprisePlan.name}</strong>
@@ -293,76 +325,119 @@ export function PartnerPitchScreen({
               </div>
               <p className="partner-pricing-card-footnote">modelo consultivo</p>
               <p className="partner-pricing-card-savings">{enterprisePlan.savings}</p>
-              <div className="partner-pricing-card-cta">{enterprisePlan.cta}</div>
+              <button
+                className="partner-pricing-card-cta"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setSelectedPlanSlug("enterprise");
+                  setSubmitError(null);
+                  setSubmitSuccess(null);
+                  setIsApplicationModalOpen(true);
+                }}
+              >
+                {enterprisePlan.cta}
+              </button>
               <ul>
                 {enterprisePlan.bullets.map((bullet) => (
                   <li key={bullet}>{bullet}</li>
                 ))}
               </ul>
-            </button>
+            </article>
           </div>
         </div>
       </section>
 
-      <section className="partner-application-surface">
-        <div className="partner-application-copy">
-          <p className="section-kicker">Aplicação do parceiro</p>
-          <h2>Escolheu o plano? Deixe seu perfil para validação.</h2>
-          <p>
-            Os leads entram automaticamente pelo diagnóstico dos empresários. Aqui a gente valida se sua especialidade
-            e sua capacidade de entrega combinam com a demanda da rede.
-          </p>
+      {isApplicationModalOpen ? (
+        <div className="modal-overlay" role="presentation" onClick={() => setIsApplicationModalOpen(false)}>
+          <section
+            className={`contact-modal partner-application-modal partner-application-modal-${themeMode}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="partner-application-title"
+            onClick={stopPropagation}
+          >
+            <div className="contact-modal-header partner-application-modal-header">
+              <div className="partner-application-copy">
+                <p className="section-kicker">Aplicação do parceiro</p>
+                <h2 id="partner-application-title">Escolheu o plano? Deixe seu perfil para validação.</h2>
+                <p>
+                  Seu perfil vai para o time da Resolva, que valida aderência, organiza a entrada e segue com a
+                  formalização da parceria e cobrança recorrente.
+                </p>
+              </div>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setIsApplicationModalOpen(false)}
+                aria-label="Fechar modal"
+              >
+                ×
+              </button>
+            </div>
 
-          <div className="partner-pitch-summary">
-            <span>Plano selecionado</span>
-            <strong>{selectedPlan.name}</strong>
-            <small>
-              {selectedPlanSlug === "enterprise"
-                ? "Projeto customizado"
-                : `${selectedPlanPriceLabel} • ${billingCycle}`}
-            </small>
-          </div>
+            <div className="partner-application-modal-layout">
+              <div className="partner-pitch-summary">
+                <span>Plano selecionado</span>
+                <strong>{selectedPlan.name}</strong>
+                <small>
+                  {selectedPlanSlug === "enterprise"
+                    ? "Projeto customizado"
+                    : `${selectedPlanPriceLabel} • ${billingCycle}`}
+                </small>
+              </div>
+
+              <form className="partner-pitch-form" onSubmit={handleSubmit}>
+                <label>
+                  Nome
+                  <input
+                    value={formData.partnerName}
+                    onChange={handleFieldChange("partnerName")}
+                    placeholder="Seu nome ou empresa"
+                  />
+                </label>
+                <label>
+                  E-mail
+                  <input
+                    type="email"
+                    value={formData.partnerEmail}
+                    onChange={handleFieldChange("partnerEmail")}
+                    placeholder="voce@empresa.com"
+                  />
+                </label>
+                <label>
+                  Especialidade
+                  <input
+                    value={formData.partnerSpecialty}
+                    onChange={handleFieldChange("partnerSpecialty")}
+                    placeholder="Ex: operação comercial, jurídico B2B, performance"
+                  />
+                </label>
+                <label>
+                  LinkedIn ou portfólio
+                  <input
+                    value={formData.partnerPortfolioUrl}
+                    onChange={handleFieldChange("partnerPortfolioUrl")}
+                    placeholder="https://linkedin.com/in/... ou site"
+                  />
+                </label>
+
+                {submitError ? <p className="partner-pitch-feedback error">{submitError}</p> : null}
+                {submitSuccess ? <p className="partner-pitch-feedback success">{submitSuccess}</p> : null}
+
+                <div className="partner-application-modal-actions">
+                  <button className="ghost-button" type="button" onClick={() => setIsApplicationModalOpen(false)}>
+                    Cancelar
+                  </button>
+                  <button className="gold-button" type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Enviando..." : "Enviar aplicação"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
         </div>
-
-        <form className="partner-pitch-form" onSubmit={handleSubmit}>
-          <label>
-            Nome
-            <input value={formData.partnerName} onChange={handleFieldChange("partnerName")} placeholder="Seu nome ou empresa" />
-          </label>
-          <label>
-            E-mail
-            <input
-              type="email"
-              value={formData.partnerEmail}
-              onChange={handleFieldChange("partnerEmail")}
-              placeholder="voce@empresa.com"
-            />
-          </label>
-          <label>
-            Especialidade
-            <input
-              value={formData.partnerSpecialty}
-              onChange={handleFieldChange("partnerSpecialty")}
-              placeholder="Ex: operação comercial, jurídico B2B, performance"
-            />
-          </label>
-          <label>
-            LinkedIn ou portfólio
-            <input
-              value={formData.partnerPortfolioUrl}
-              onChange={handleFieldChange("partnerPortfolioUrl")}
-              placeholder="https://linkedin.com/in/... ou site"
-            />
-          </label>
-
-          {submitError ? <p className="partner-pitch-feedback error">{submitError}</p> : null}
-          {submitSuccess ? <p className="partner-pitch-feedback success">{submitSuccess}</p> : null}
-
-          <button className="gold-button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Enviando..." : "Enviar aplicação"}
-          </button>
-        </form>
-      </section>
+      ) : null}
     </main>
   );
 }

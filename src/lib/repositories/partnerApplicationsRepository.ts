@@ -1,6 +1,6 @@
 import { supabase } from "../supabase";
 
-import type { PartnerPlanApplicationInsert, PartnerPlanApplicationRow } from "../../types/database";
+import type { PartnerPlanApplicationInsert } from "../../types/database";
 
 type RepositorySuccess<T> = {
   success: true;
@@ -16,9 +16,7 @@ type RepositoryError = {
 
 type RepositoryResult<T> = Promise<RepositorySuccess<T> | RepositoryError>;
 
-export async function createPartnerPlanApplication(
-  payload: PartnerPlanApplicationInsert,
-): RepositoryResult<PartnerPlanApplicationRow | null> {
+export async function createPartnerPlanApplication(payload: PartnerPlanApplicationInsert): RepositoryResult<null> {
   try {
     const { error } = await supabase
       .from("partner_plan_applications")
