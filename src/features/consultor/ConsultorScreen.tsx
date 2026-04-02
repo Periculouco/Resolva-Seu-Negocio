@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEventHandler, FormEventHandler, MouseEventHandler } from "react";
 
-import { createActivity, listActivitiesByLead } from "../../lib/repositories/activitiesRepository";
+import { listActivitiesByLead } from "../../lib/repositories/activitiesRepository";
 import type { ConsultantAgendaItem, ConsultantLead, ConsultantSection } from "../../types/domain";
 import type { PartnerActivityRow } from "../../types/database";
 
@@ -52,6 +52,16 @@ type ConsultorScreenProps = {
     success: boolean;
     error?: string | null;
   }>;
+  onCreateConsultantActivity: (draft: {
+    leadId: string;
+    title: string;
+    dueDate: string;
+    channel: string;
+    note: string;
+  }) => Promise<{
+    success: boolean;
+    error?: string | null;
+  }>;
   onSaveConsultantPipeline: (pipelineName: string) => Promise<{
     success: boolean;
     error?: string | null;
@@ -80,6 +90,7 @@ export function ConsultorScreen({
   consultantAgenda,
   toStatusClassName,
   onCreateConsultantDeal,
+  onCreateConsultantActivity,
   onSaveConsultantPipeline,
   onConsultantLogin,
   onConsultantLogout,
@@ -304,11 +315,6 @@ export function ConsultorScreen({
   };
 
   const handleActivityCreate = async () => {
-    if (!consultantInstanceSlug) {
-      setToolError("Não foi possível identificar a instância ativa.");
-      return;
-    }
-
     const lead = activityLead ?? selectedLead ?? activeLead;
 
     if (!lead) {
@@ -324,14 +330,12 @@ export function ConsultorScreen({
     setIsSavingActivity(true);
     setToolError(null);
 
-    const result = await createActivity({
-      partner_instance_slug: consultantInstanceSlug,
-      lead_id: lead.id,
+    const result = await onCreateConsultantActivity({
+      leadId: lead.id,
       title: activityForm.title.trim(),
-      due_date: activityForm.dueDate || null,
+      dueDate: activityForm.dueDate,
       channel: activityForm.channel,
-      note: activityForm.note.trim() || null,
-      status: "Pendente",
+      note: activityForm.note.trim(),
     });
 
     setIsSavingActivity(false);
@@ -341,7 +345,13 @@ export function ConsultorScreen({
       return;
     }
 
-    setLeadActivities((current) => [result.data, ...current]);
+    if (consultantInstanceSlug) {
+      void listActivitiesByLead(lead.id, consultantInstanceSlug).then((activitiesResult) => {
+        if (activitiesResult.success) {
+          setLeadActivities(activitiesResult.data);
+        }
+      });
+    }
     setToolSuccess("Atividade criada e vinculada ao lead.");
     window.setTimeout(() => {
       closeToolModal();

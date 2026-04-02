@@ -38,6 +38,7 @@ import {
   signOutPartner,
 } from "./lib/repositories/authRepository";
 import { listAgendaByInstance } from "./lib/repositories/agendaRepository";
+import { createActivity } from "./lib/repositories/activitiesRepository";
 import { trackEvent } from "./lib/repositories/eventsRepository";
 import { createLead, listLeadsByInstance } from "./lib/repositories/leadsRepository";
 import {
@@ -79,6 +80,14 @@ type ConsultantDealDraft = {
   phone: string;
   email: string;
   role: string;
+};
+
+type ConsultantActivityDraft = {
+  leadId: string;
+  title: string;
+  dueDate: string;
+  channel: string;
+  note: string;
 };
 
 function AnimatedSignalList({ items }: { items: SignalItem[] }) {
@@ -731,15 +740,54 @@ function App() {
     setScreen("explore");
   };
 
-  const handleConsultantDealCreate = async (draft: ConsultantDealDraft) => {
-    const instanceSlug = partnerProfile?.instance_slug;
+  const resolveCurrentPartnerProfile = useCallback(async () => {
+    if (partnerProfile?.instance_slug) {
+      return {
+        success: true as const,
+        data: partnerProfile,
+        error: null,
+      };
+    }
 
-    if (!consultantSession || !instanceSlug) {
+    const profileResult = await getCurrentPartnerProfile();
+
+    if (!profileResult.success || !profileResult.data?.instance_slug) {
+      return {
+        success: false as const,
+        data: null,
+        error: profileResult.success
+          ? "Não foi possível identificar a instância ativa do parceiro."
+          : profileResult.error,
+      };
+    }
+
+    setPartnerProfile(profileResult.data);
+
+    return {
+      success: true as const,
+      data: profileResult.data,
+      error: null,
+    };
+  }, [partnerProfile]);
+
+  const handleConsultantDealCreate = async (draft: ConsultantDealDraft) => {
+    if (!consultantSession) {
       return {
         success: false,
         error: "Não foi possível identificar a instância ativa do parceiro.",
       };
     }
+
+    const profileResult = await resolveCurrentPartnerProfile();
+
+    if (!profileResult.success) {
+      return {
+        success: false,
+        error: profileResult.error,
+      };
+    }
+
+    const instanceSlug = profileResult.data.instance_slug;
 
     const createResult = await createLead({
       partner_instance_slug: instanceSlug,
@@ -807,6 +855,46 @@ function App() {
       };
 
       setConsultantLeads((current) => [optimisticLead, ...current]);
+    }
+
+    return {
+      success: true,
+      error: null,
+    };
+  };
+
+  const handleConsultantActivityCreate = async (draft: ConsultantActivityDraft) => {
+    if (!consultantSession) {
+      return {
+        success: false,
+        error: "Não foi possível identificar a instância ativa.",
+      };
+    }
+
+    const profileResult = await resolveCurrentPartnerProfile();
+
+    if (!profileResult.success) {
+      return {
+        success: false,
+        error: profileResult.error,
+      };
+    }
+
+    const result = await createActivity({
+      partner_instance_slug: profileResult.data.instance_slug,
+      lead_id: draft.leadId,
+      title: draft.title,
+      due_date: draft.dueDate || null,
+      channel: draft.channel || null,
+      note: draft.note || null,
+      status: "Pendente",
+    });
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
     }
 
     return {
@@ -1045,6 +1133,7 @@ function App() {
           consultantAgenda={consultantAgenda}
           toStatusClassName={toStatusClassName}
           onCreateConsultantDeal={handleConsultantDealCreate}
+          onCreateConsultantActivity={handleConsultantActivityCreate}
           onSaveConsultantPipeline={handleConsultantPipelineSave}
           onConsultantLogin={handleConsultantLogin}
           onConsultantLogout={handleConsultantLogout}
