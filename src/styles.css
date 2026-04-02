@@ -3308,6 +3308,52 @@ button {
   color: var(--consultant-text);
   font-size: 0.6rem;
   font-weight: 700;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
+}
+
+.consultant-card-action:hover {
+  transform: translateY(-1px);
+  border-color: rgba(249, 115, 22, 0.22);
+  background: color-mix(in srgb, var(--consultant-surface) 76%, rgba(249, 115, 22, 0.1));
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+.consultant-card-action:focus-visible {
+  outline: 0;
+  border-color: rgba(249, 115, 22, 0.36);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
+}
+
+.consultant-card-action-whatsapp {
+  border-color: rgba(34, 197, 94, 0.22);
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+}
+
+.consultant-card-action-whatsapp:hover {
+  border-color: rgba(34, 197, 94, 0.34);
+  background: rgba(34, 197, 94, 0.16);
+  box-shadow: 0 8px 18px rgba(34, 197, 94, 0.16);
+}
+
+.consultant-theme-dark .consultant-card-action-whatsapp {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.26);
+}
+
+.consultant-theme-dark .consultant-card-action-whatsapp:hover {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(74, 222, 128, 0.38);
+}
+
+.consultant-card-action-secondary:hover {
+  color: var(--consultant-accent-strong);
 }
 
 .consultant-tool-modal {
@@ -4069,6 +4115,20 @@ button {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.08);
   color: var(--consultant-text);
+}
+
+.modal-close {
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.modal-close:hover {
+  transform: translateY(-1px);
+  border-color: rgba(249, 115, 22, 0.24);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
 }
 
 .consultant-profile-grid {

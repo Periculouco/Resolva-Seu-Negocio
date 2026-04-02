@@ -885,7 +885,7 @@ export function ConsultorScreen({
                                   </div>
                                   <div className="consultant-pipeline-card-quick-actions">
                                     <button
-                                      className="consultant-card-action"
+                                      className="consultant-card-action consultant-card-action-whatsapp"
                                       type="button"
                                       onClick={(event) => {
                                         event.stopPropagation();
@@ -895,7 +895,7 @@ export function ConsultorScreen({
                                       WhatsApp
                                     </button>
                                     <button
-                                      className="consultant-card-action"
+                                      className="consultant-card-action consultant-card-action-secondary"
                                       type="button"
                                       onClick={(event) => {
                                         event.stopPropagation();
@@ -905,7 +905,7 @@ export function ConsultorScreen({
                                       Atividade
                                     </button>
                                     <button
-                                      className="consultant-card-action"
+                                      className="consultant-card-action consultant-card-action-secondary"
                                       type="button"
                                       onClick={(event) => {
                                         event.stopPropagation();
@@ -1076,10 +1076,18 @@ export function ConsultorScreen({
                 <span className="consultant-context-chip">{selectedLead.recommendedCategory}</span>
               </div>
               <div className="consultant-lead-modal-actions">
-                <button className="consultant-card-action" type="button" onClick={() => openLeadWhatsApp(selectedLead)}>
+                <button
+                  className="consultant-card-action consultant-card-action-whatsapp"
+                  type="button"
+                  onClick={() => openLeadWhatsApp(selectedLead)}
+                >
                   WhatsApp
                 </button>
-                <button className="consultant-card-action" type="button" onClick={() => openActivityModal(selectedLead)}>
+                <button
+                  className="consultant-card-action consultant-card-action-secondary"
+                  type="button"
+                  onClick={() => openActivityModal(selectedLead)}
+                >
                   Criar atividade
                 </button>
                 <button className="primary-button" type="button" onClick={() => setSelectedLead(null)}>
