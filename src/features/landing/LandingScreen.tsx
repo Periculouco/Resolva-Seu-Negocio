@@ -36,6 +36,7 @@ type LandingScreenProps = {
   onSubmitChallenge: FormEventHandler<HTMLFormElement>;
   onStartDiagnosis: (challenge?: string) => void;
   onOpenExploreCategory: (exploreCategory: string) => void;
+  onOpenPartnerPitch: () => void;
   onOpenConsultantArea: () => void;
   AnimatedSignalList: ComponentType<{ items: SignalItem[] }>;
   AnimatedNumber: ComponentType<{ value: number; prefix?: string; suffix?: string }>;
@@ -56,6 +57,7 @@ export function LandingScreen({
   onSubmitChallenge,
   onStartDiagnosis,
   onOpenExploreCategory,
+  onOpenPartnerPitch,
   onOpenConsultantArea,
   AnimatedSignalList,
   AnimatedNumber,
@@ -297,7 +299,7 @@ export function LandingScreen({
           <p>
             Se sua especialidade destrava crescimento, faz sentido conversar com a gente.
           </p>
-          <button className="gold-button" type="button">
+          <button className="gold-button" type="button" onClick={onOpenPartnerPitch}>
             Quero entrar na rede
           </button>
           <button className="ghost-button partner-secondary-cta" type="button" onClick={onOpenConsultantArea}>

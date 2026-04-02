@@ -41,6 +41,7 @@ import { listAgendaByInstance } from "./lib/repositories/agendaRepository";
 import { createActivity } from "./lib/repositories/activitiesRepository";
 import { trackEvent } from "./lib/repositories/eventsRepository";
 import { createLead, listLeadsByInstance, updateLeadStatus } from "./lib/repositories/leadsRepository";
+import { createPartnerPlanApplication } from "./lib/repositories/partnerApplicationsRepository";
 import {
   getCurrentPartnerProfile,
   updatePartnerPipelineNameByProfileId,
@@ -50,6 +51,7 @@ import { supabase } from "./lib/supabase";
 import { ConsultorScreen } from "./features/consultor/ConsultorScreen";
 import { ExploreScreen } from "./features/explore/ExploreScreen";
 import { LandingScreen } from "./features/landing/LandingScreen";
+import { PartnerPitchScreen } from "./features/partner/PartnerPitchScreen";
 import { QuizScreen } from "./features/quiz/QuizScreen";
 import { ResultScreen } from "./features/result/ResultScreen";
 import { ContactModal } from "./features/shared/ContactModal";
@@ -325,6 +327,10 @@ function App() {
     setScreen("consultor");
   };
 
+  const openPartnerPitch = () => {
+    setScreen("partner-pitch");
+  };
+
   const toggleThemeMode = () => {
     setThemeMode((previous) => (previous === "light" ? "dark" : "light"));
   };
@@ -336,6 +342,13 @@ function App() {
     setScreen("explore");
   };
 
+  const openHowItWorks = () => {
+    setScreen("landing");
+    window.setTimeout(() => {
+      document.getElementById("como-funciona")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  };
+
   const submitChallenge = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     startDiagnosis();
@@ -343,6 +356,31 @@ function App() {
 
   const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setFormData((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const submitPartnerApplication = async (payload: {
+    partnerName: string;
+    partnerEmail: string;
+    partnerSpecialty: string;
+    partnerPortfolioUrl: string;
+    planSlug: string;
+    billingCycle: "Mensal" | "Anual" | "Enterprise";
+  }) => {
+    const result = await createPartnerPlanApplication({
+      partner_name: payload.partnerName,
+      partner_email: payload.partnerEmail,
+      partner_specialty: payload.partnerSpecialty,
+      partner_portfolio_url: payload.partnerPortfolioUrl || null,
+      plan_slug: payload.planSlug,
+      billing_cycle: payload.billingCycle,
+      source_screen: "partner_pitch",
+      status: "Novo",
+    });
+
+    return {
+      success: result.success,
+      error: result.success ? null : result.error,
+    };
   };
 
   const nextStep = () => {
@@ -1055,15 +1093,11 @@ function App() {
             Explorar
           </button>
           <button className={screen === "consultor" ? "nav-link active" : "nav-link"} onClick={openConsultantArea}>
-            Área do parceiro
+            Área dos Parceiros
           </button>
-          {screen === "landing" && (
-            <>
-              <a href="#numeros">Números</a>
-              <a href="#categorias">Categorias</a>
-              <a href="#como-funciona">Como funciona</a>
-            </>
-          )}
+          <button className="nav-link" onClick={openHowItWorks}>
+            Como funciona
+          </button>
           <button className="theme-toggle" type="button" onClick={toggleThemeMode} aria-label="Alternar tema">
             {themeMode === "light" ? "◐" : "◑"}
           </button>
@@ -1089,9 +1123,19 @@ function App() {
           onSubmitChallenge={submitChallenge}
           onStartDiagnosis={startDiagnosis}
           onOpenExploreCategory={openExploreCategory}
+          onOpenPartnerPitch={openPartnerPitch}
           onOpenConsultantArea={openConsultantArea}
           AnimatedSignalList={AnimatedSignalList}
           AnimatedNumber={AnimatedNumber}
+        />
+      )}
+
+      {screen === "partner-pitch" && (
+        <PartnerPitchScreen
+          themeMode={themeMode}
+          onGoBack={goHome}
+          onOpenConsultantArea={openConsultantArea}
+          onSubmitApplication={submitPartnerApplication}
         />
       )}
 

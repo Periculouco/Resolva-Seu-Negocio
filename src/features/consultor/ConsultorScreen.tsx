@@ -1254,17 +1254,6 @@ export function ConsultorScreen({
                       <h2>Dashboard operacional</h2>
                       <span>Leitura da operação, do funil e da agenda da instância.</span>
                     </div>
-                    <div className="consultant-reference-header-actions">
-                      <button className="consultant-reference-circle" type="button" aria-label="Buscar">
-                        ⌕
-                      </button>
-                      <button className="consultant-reference-circle" type="button" aria-label="Notificações">
-                        •
-                      </button>
-                      <button className="consultant-reference-avatar" type="button" aria-label="Perfil">
-                        {(consultantInstanceSlug?.slice(0, 1) || "R").toUpperCase()}
-                      </button>
-                    </div>
                   </div>
 
                   <div className="consultant-reference-top-stats">
