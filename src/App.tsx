@@ -833,7 +833,7 @@ function App() {
       diagnosis_title: draft.title || "Novo negócio",
       diagnosis_summary: `Lead criado manualmente no pipeline ${draft.funnel}.`,
       recommended_category: draft.funnel || null,
-      primary_goal_label: draft.title || null,
+      primary_goal_label: null,
       source_screen: draft.sourceChannel || "consultor_manual",
       status:
         draft.stage === "Contato iniciado"
@@ -877,7 +877,7 @@ function App() {
         challenge: draft.title || "Novo negócio criado manualmente",
         diagnosis: draft.title || "Novo negócio",
         diagnosisSummary: `Lead criado manualmente via ${draft.sourceChannel || "consultor"}.`,
-        objective: draft.title || "Objetivo não informado",
+        objective: "Criado manualmente",
         urgency: draft.tag || "Lead do diagnóstico",
         recommendedCategory: draft.funnel || "Pipeline comercial",
         recommendedSpecialist: partnerProfile?.partner_name || "Parceiro ativo",

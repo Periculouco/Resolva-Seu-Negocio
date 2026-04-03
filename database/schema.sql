@@ -1,119 +1,167 @@
-create extension if not exists "pgcrypto";
+-- Schema real do banco Supabase — Resolva Seu Negócio
+-- Atualizado em 2026-04-02 para refletir o estado real das tabelas em produção.
+-- Execute no SQL Editor do Supabase apenas em um banco novo.
+-- Em banco existente, use migrations incrementais.
 
-create table if not exists partner_instances (
-  id uuid primary key default gen_random_uuid(),
-  slug text not null unique,
-  name text not null,
-  public_name text not null,
-  category text not null,
-  active boolean not null default true,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists partner_users (
-  id uuid primary key default gen_random_uuid(),
-  partner_instance_id uuid not null references partner_instances(id) on delete cascade,
-  auth_user_id uuid unique,
-  full_name text not null,
-  email text not null unique,
-  role text not null check (role in ('owner', 'manager', 'sdr', 'consultant')),
-  phone text,
-  created_at timestamptz not null default now()
-);
-
+-- ============================================================
+-- partner_profiles
+-- Um registro por parceiro autenticado.
+-- instance_slug identifica o tenant operacional.
+-- ============================================================
 create table if not exists partner_profiles (
-  id uuid primary key default gen_random_uuid(),
-  partner_instance_id uuid not null references partner_instances(id) on delete cascade,
-  display_name text not null,
-  title text not null,
-  bio text,
-  focus text,
-  whatsapp_number text,
-  meeting_duration_minutes integer not null default 30,
-  created_at timestamptz not null default now()
+  id            uuid        primary key default gen_random_uuid(),
+  user_id       uuid        references auth.users(id) on delete cascade,
+  instance_slug text        not null unique,
+  partner_name  text        not null,
+  role          text        not null default 'consultor',
+  pipeline_name text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 
+-- ============================================================
+-- leads
+-- Criados pelo empresário via modal de contato (source_screen = 'result_modal')
+-- ou manualmente pelo parceiro (source_screen = 'consultor_manual').
+-- Vinculados ao parceiro pelo partner_instance_slug.
+-- ============================================================
 create table if not exists leads (
-  id uuid primary key default gen_random_uuid(),
-  source text not null default 'diagnostico',
-  company_name text,
-  contact_name text not null,
-  email text not null,
-  phone text not null,
-  role text,
-  main_pain text,
-  challenge text,
-  created_at timestamptz not null default now()
+  id                          uuid        primary key default gen_random_uuid(),
+  partner_instance_slug       text        not null,
+  company                     text,
+  contact_name                text        not null,
+  contact_email               text        not null,
+  contact_phone               text,
+  contact_role                text,
+  challenge                   text,
+  revenue_profile             text,
+  revenue_profile_label       text,
+  business_moment             text,
+  business_moment_label       text,
+  decision_making             text,
+  decision_making_label       text,
+  current_bottleneck          text,
+  current_bottleneck_label    text,
+  solution_experience         text,
+  solution_experience_label   text,
+  primary_goal                text,
+  primary_goal_label          text,
+  main_pain                   text,
+  diagnosis_title             text        not null,
+  diagnosis_summary           text,
+  inferred_area               text,
+  recommended_category        text,
+  recommended_specialist_name text,
+  source_screen               text,
+  status                      text        not null default 'Novo',
+  created_at                  timestamptz not null default now(),
+  updated_at                  timestamptz not null default now()
 );
 
-create table if not exists lead_diagnoses (
-  id uuid primary key default gen_random_uuid(),
-  lead_id uuid not null unique references leads(id) on delete cascade,
-  revenue_profile text,
-  business_moment text,
-  decision_making text,
-  current_bottleneck text,
-  solution_experience text,
-  primary_goal text,
-  inferred_area text,
-  diagnosis_title text not null,
-  diagnosis_summary text not null,
-  created_at timestamptz not null default now()
+-- ============================================================
+-- partner_activities
+-- Atividades de follow-up criadas pelo parceiro, vinculadas a um lead.
+-- ============================================================
+create table if not exists partner_activities (
+  id                    uuid        primary key default gen_random_uuid(),
+  partner_instance_slug text        not null,
+  lead_id               uuid        references leads(id) on delete set null,
+  title                 text        not null,
+  due_date              text,
+  channel               text,
+  note                  text,
+  status                text        not null default 'Pendente',
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
 );
 
-create table if not exists lead_assignments (
-  id uuid primary key default gen_random_uuid(),
-  lead_id uuid not null references leads(id) on delete cascade,
-  partner_instance_id uuid not null references partner_instances(id) on delete cascade,
-  partner_profile_id uuid references partner_profiles(id) on delete set null,
-  assigned_user_id uuid references partner_users(id) on delete set null,
-  priority_score integer not null default 0,
-  status text not null default 'new' check (status in ('new', 'contacting', 'qualified', 'meeting_booked', 'won', 'lost')),
-  created_at timestamptz not null default now()
+-- ============================================================
+-- partner_agenda
+-- Reuniões e compromissos do parceiro.
+-- ============================================================
+create table if not exists partner_agenda (
+  id                    uuid        primary key default gen_random_uuid(),
+  partner_instance_slug text        not null,
+  title                 text        not null,
+  company               text,
+  starts_at             timestamptz not null,
+  owner_name            text,
+  status                text        not null default 'Pendente',
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
 );
 
-create table if not exists lead_notes (
-  id uuid primary key default gen_random_uuid(),
-  lead_id uuid not null references leads(id) on delete cascade,
-  partner_user_id uuid not null references partner_users(id) on delete cascade,
-  body text not null,
-  created_at timestamptz not null default now()
+-- ============================================================
+-- partner_plan_applications
+-- Aplicações de parceiros para planos via PartnerPitchScreen.
+-- ============================================================
+create table if not exists partner_plan_applications (
+  id                    uuid        primary key default gen_random_uuid(),
+  partner_name          text        not null,
+  partner_email         text        not null,
+  partner_specialty     text        not null,
+  partner_portfolio_url text,
+  plan_slug             text        not null,
+  billing_cycle         text        not null default 'Mensal',
+  source_screen         text,
+  status                text        not null default 'Novo',
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
 );
 
-create table if not exists availability_rules (
-  id uuid primary key default gen_random_uuid(),
-  partner_profile_id uuid not null references partner_profiles(id) on delete cascade,
-  weekday integer not null check (weekday between 0 and 6),
-  starts_at time not null,
-  ends_at time not null,
-  slot_minutes integer not null default 30,
-  active boolean not null default true,
-  created_at timestamptz not null default now()
+-- ============================================================
+-- funnel_events
+-- Eventos de funil para rastreio de comportamento.
+-- Dados pessoais são sanitizados antes de inserir (ver eventsRepository.ts).
+-- ============================================================
+create table if not exists funnel_events (
+  id                    uuid        primary key default gen_random_uuid(),
+  event_name            text        not null,
+  screen                text,
+  partner_instance_slug text,
+  lead_id               uuid,
+  metadata              jsonb,
+  created_at            timestamptz not null default now()
 );
 
-create table if not exists blocked_slots (
-  id uuid primary key default gen_random_uuid(),
-  partner_profile_id uuid not null references partner_profiles(id) on delete cascade,
-  starts_at timestamptz not null,
-  ends_at timestamptz not null,
-  reason text,
-  created_at timestamptz not null default now()
-);
+-- ============================================================
+-- Índices
+-- ============================================================
+create index if not exists idx_leads_instance      on leads(partner_instance_slug);
+create index if not exists idx_leads_status        on leads(status);
+create index if not exists idx_leads_created_at    on leads(created_at desc);
+create index if not exists idx_activities_instance on partner_activities(partner_instance_slug);
+create index if not exists idx_activities_lead     on partner_activities(lead_id);
+create index if not exists idx_agenda_instance     on partner_agenda(partner_instance_slug);
+create index if not exists idx_events_name         on funnel_events(event_name);
 
-create table if not exists appointments (
-  id uuid primary key default gen_random_uuid(),
-  lead_id uuid not null references leads(id) on delete cascade,
-  partner_profile_id uuid not null references partner_profiles(id) on delete cascade,
-  partner_user_id uuid references partner_users(id) on delete set null,
-  starts_at timestamptz not null,
-  ends_at timestamptz not null,
-  status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled', 'completed')),
-  origin text not null default 'diagnostico',
-  created_at timestamptz not null default now()
-);
-
-create index if not exists idx_partner_users_instance on partner_users(partner_instance_id);
-create index if not exists idx_partner_profiles_instance on partner_profiles(partner_instance_id);
-create index if not exists idx_lead_assignments_lead on lead_assignments(lead_id);
-create index if not exists idx_lead_assignments_instance on lead_assignments(partner_instance_id);
-create index if not exists idx_appointments_profile on appointments(partner_profile_id, starts_at);
+-- ============================================================
+-- RLS — políticas presentes em produção (documentação)
+-- Não re-execute: já estão ativas no banco.
+--
+-- partner_profiles:
+--   INSERT authenticated  → partner_profiles_insert_own
+--   SELECT authenticated  → partner_profiles_select_own
+--   UPDATE authenticated  → partner_profiles_update_own
+--
+-- leads:
+--   INSERT anon+auth      → leads_insert_public
+--   SELECT authenticated  → leads_select_by_instance (usa current_instance_slug())
+--   UPDATE authenticated  → leads_update_by_instance
+--
+-- partner_activities:
+--   INSERT authenticated  → partner_activities_insert_own_instance
+--   SELECT authenticated  → partner_activities_select_own_instance
+--
+-- partner_agenda:
+--   INSERT authenticated  → partner_agenda_insert_by_instance
+--   SELECT authenticated  → partner_agenda_select_by_instance
+--   UPDATE authenticated  → partner_agenda_update_by_instance
+--
+-- partner_plan_applications:
+--   INSERT anon+auth      → partner_plan_applications_insert_anon
+--
+-- funnel_events:
+--   INSERT anon+auth      → funnel_events_insert_public
+--   SELECT authenticated  → funnel_events_select_authenticated
+-- ============================================================
